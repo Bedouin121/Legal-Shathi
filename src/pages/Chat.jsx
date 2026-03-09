@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { chatAPI } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+import ProfileDropdown from "@/components/ProfileDropdown";
 
 const SUGGESTED_QUESTIONS = [
   "What template do I need to sell my property?",
@@ -165,6 +166,7 @@ const Chat = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ProfileDropdown />
             <button
               onClick={clearChat}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive px-3 py-1.5 rounded-lg border border-border hover:bg-secondary transition-colors"

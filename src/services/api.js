@@ -36,6 +36,47 @@ export const authAPI = {
     apiFetch("/auth/login", { method: "POST", body: JSON.stringify(body) }),
 
   getMe: () => apiFetch("/auth/me"),
+
+  uploadProfilePicture: (file) => {
+    const formData = new FormData();
+    formData.append("profilePicture", file);
+    const token = getToken();
+    return fetch(`${API_BASE}/auth/profile-picture`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Upload failed");
+      return data;
+    });
+  },
+
+  deleteProfilePicture: () =>
+    apiFetch("/auth/profile-picture", { method: "DELETE" }),
+};
+
+// ==================== Upload ====================
+export const uploadAPI = {
+  uploadProfilePicture: (file) => {
+    const formData = new FormData();
+    formData.append("profilePicture", file);
+    return fetch(`${API_BASE}/upload/profile-picture`, {
+      method: "POST",
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Upload failed");
+      return data;
+    });
+  },
+
+  deleteProfilePicture: (publicId) =>
+    apiFetch(`/upload/profile-picture/${encodeURIComponent(publicId)}`, {
+      method: "DELETE",
+    }),
 };
 
 // ==================== Templates ====================
