@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --background: 225 50% 6%;
+    --foreground: 210 40% 92%;
+
+    --card: 225 40% 10%;
+    --card-foreground: 210 40% 92%;
+
+    --popover: 225 40% 10%;
+    --popover-foreground: 210 40% 92%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 225 30% 16%;
+    --secondary-foreground: 210 40% 92%;
+
+    --muted: 225 25% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 225 30% 16%;
+    --accent-foreground: 210 40% 92%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 225 20% 18%;
+    --input: 225 20% 18%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 225 45% 8%;
+    --sidebar-foreground: 215 20% 55%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 225 30% 14%;
+    --sidebar-accent-foreground: 210 40% 92%;
+    --sidebar-border: 225 20% 14%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Category colors */
+    --cat-property: 217 91% 60%;
+    --cat-personal: 270 60% 60%;
+    --cat-business: 0 72% 55%;
+    --cat-family: 174 60% 45%;
+    --cat-employment: 142 55% 45%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(230 80% 65%));
+    --gradient-card: linear-gradient(145deg, hsl(225 40% 12%), hsl(225 40% 8%));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
