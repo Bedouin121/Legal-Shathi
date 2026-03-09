@@ -6,6 +6,7 @@ import {
   Users,
   Building2,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ const categoryIcons = {
   Property: Home,
   Family: Users,
   Employment: Building2,
+  "Analytics Dashboard": BarChart3,
 };
 
 const categories = [
@@ -27,6 +29,7 @@ const categories = [
   "Property",
   "Family",
   "Employment",
+  "Analytics Dashboard",
 ];
 
 const CategorySidebar = ({ activeCategory, onCategoryChange }) => {
@@ -41,6 +44,23 @@ const CategorySidebar = ({ activeCategory, onCategoryChange }) => {
           {categories.map((cat) => {
             const Icon = categoryIcons[cat];
             const isActive = activeCategory === cat;
+            if (cat === "Analytics Dashboard") {
+              return (
+                <button
+                  key={cat}
+                  onClick={() => navigate("/analytics-dashboard")}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    window.location.pathname === "/analytics-dashboard"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {cat}
+                </button>
+              );
+            }
             return (
               <button
                 key={cat}

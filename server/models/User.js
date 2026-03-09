@@ -34,6 +34,14 @@ const userSchema = new mongoose.Schema(
         ref: "Template",
       },
     ],
+    profilePicture: {
+      type: String,
+      default: null,
+    },
+    profilePicturePublicId: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
