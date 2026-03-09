@@ -1,11 +1,19 @@
 import { Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { categoryColors } from "@/data/templates";
 import { cn } from "@/lib/utils";
+
+const categoryColors = {
+  Property: "bg-category-property/20 text-category-property",
+  Personal: "bg-category-personal/20 text-category-personal",
+  Business: "bg-category-business/20 text-category-business",
+  Family: "bg-category-family/20 text-category-family",
+  Employment: "bg-category-employment/20 text-category-employment",
+};
 
 const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
   const colorClass = categoryColors[template.category];
+  const templateId = template._id || template.id;
 
   return (
     <div className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 animate-fade-in">
@@ -18,7 +26,7 @@ const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
           {template.category}
         </Badge>
         <button
-          onClick={() => onToggleFavorite(template.id)}
+          onClick={() => onToggleFavorite(templateId)}
           className="text-muted-foreground transition-colors hover:text-destructive"
         >
           <Heart

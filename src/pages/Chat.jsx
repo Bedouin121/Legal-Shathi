@@ -2,17 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Bot, User, Loader2, AlertCircle, ArrowLeft, Trash2, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-
-const SYSTEM_PROMPT = `You are "AI Shathi", an expert AI legal assistant for the Legal Shathi platform in Bangladesh. 
-Your role is to help users:
-- Understand legal documents and templates
-- Choose the right legal template for their needs
-- Explain legal terms in simple Bengali or English
-- Guide users through legal processes in Bangladesh
-- Answer questions about Bangladeshi law (family law, property law, business law, employment law, etc.)
-
-Always be helpful, empathetic, and clear. If a question is outside your legal expertise or requires a licensed lawyer, recommend consulting a professional. 
-Respond in the same language as the user (Bengali or English). Keep responses concise and actionable.`;
+import { chatAPI } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 const SUGGESTED_QUESTIONS = [
   "What template do I need to sell my property?",
@@ -23,14 +14,13 @@ const SUGGESTED_QUESTIONS = [
   "What is included in a standard rental agreement?",
 ];
 
-const ChatMessage = ({ message, onCopy }) => {
+const ChatMessage = ({ message }) => {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
-    onCopy?.();
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -89,6 +79,7 @@ const TypingIndicator = () => (
 
 const Chat = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -98,8 +89,7 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_OPENAI_API_KEY || "");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(!import.meta.env.VITE_OPENAI_API_KEY);
+  const [chatId, setChatId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -110,40 +100,22 @@ const Chat = () => {
   const sendMessage = async (userText) => {
     const text = (userText || input).trim();
     if (!text || isLoading) return;
-    if (!apiKey) { setShowApiKeyInput(true); return; }
 
     const userMessage = { role: "user", content: text };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...newMessages.map((m) => ({ role: m.role, content: m.content })),
-          ],
-          max_tokens: 800,
-          temperature: 0.7,
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || "API request failed");
+      let data;
+      if (user) {
+        data = await chatAPI.sendMessage(text, chatId);
+        setChatId(data.chatId);
+      } else {
+        data = await chatAPI.guestMessage(text, messages);
       }
-
-      const data = await response.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.choices[0].message.content }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -163,6 +135,7 @@ const Chat = () => {
       role: "assistant",
       content: "Chat cleared! How can I help you with legal matters today?",
     }]);
+    setChatId(null);
     setError(null);
   };
 
@@ -193,13 +166,6 @@ const Chat = () => {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-              className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border hover:bg-secondary transition-colors"
-            >
-              <AlertCircle className="h-3.5 w-3.5" />
-              API Key
-            </button>
-            <button
               onClick={clearChat}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive px-3 py-1.5 rounded-lg border border-border hover:bg-secondary transition-colors"
             >
@@ -208,30 +174,6 @@ const Chat = () => {
             </button>
           </div>
         </div>
-
-        {/* API Key Banner */}
-        {showApiKeyInput && (
-          <div className="px-4 sm:px-6 pb-4 pt-1 border-t border-border bg-muted/30">
-            <p className="text-xs text-muted-foreground mb-2">
-              Enter your OpenAI API key. It's stored in your browser session only and never sent to our servers.
-            </p>
-            <div className="flex gap-2 max-w-lg">
-              <input
-                type="password"
-                placeholder="sk-..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="flex-1 text-sm px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <button
-                onClick={() => { if (apiKey.startsWith("sk-")) setShowApiKeyInput(false); }}
-                className="px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 transition-colors font-medium"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Chat Area */}
@@ -311,12 +253,12 @@ const Chat = () => {
                   onKeyDown={handleKeyDown}
                   placeholder="Ask anything about legal templates or Bangladeshi law..."
                   rows={1}
-                  disabled={isLoading || showApiKeyInput}
+                  disabled={isLoading}
                   className="flex-1 resize-none text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 max-h-32 overflow-y-auto leading-relaxed"
                 />
                 <button
                   onClick={() => sendMessage()}
-                  disabled={!input.trim() || isLoading || showApiKeyInput}
+                  disabled={!input.trim() || isLoading}
                   className="flex-shrink-0 w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isLoading

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
@@ -7,65 +7,89 @@ import FilterTabs from "@/components/FilterTabs";
 import TemplateCard from "@/components/TemplateCard";
 import TemplatePagination from "@/components/TemplatePagination";
 import Footer from "@/components/Footer";
-import { templates } from "@/data/templates";
+import { templateAPI, favoriteAPI } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 const ITEMS_PER_PAGE = 8;
 
 const Index = () => {
+  const { user, updateFavorites } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Templates");
   const [activeTab, setActiveTab] = useState("Latest");
   const [currentPage, setCurrentPage] = useState(1);
+  const [templates, setTemplates] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState(new Set());
 
-  const toggleFavorite = (id) => {
+  // Fetch templates from API
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+        };
+        if (activeCategory !== "All Templates") params.category = activeCategory;
+        if (searchQuery.trim()) params.search = searchQuery;
+        if (activeTab !== "Latest") params.tab = activeTab;
+
+        const data = await templateAPI.getAll(params);
+        setTemplates(data.templates);
+        setTotalPages(data.totalPages);
+        setTotal(data.total);
+      } catch (err) {
+        console.error("Failed to fetch templates:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, [searchQuery, activeCategory, activeTab, currentPage]);
+
+  // Load favorites
+  useEffect(() => {
+    if (user && user.favorites) {
+      const favIds = user.favorites.map((f) => (typeof f === "string" ? f : f._id));
+      setFavorites(new Set(favIds));
+    }
+  }, [user]);
+
+  const toggleFavorite = async (id) => {
+    if (!user) return; // Could show a login prompt here
+
+    const isFav = favorites.has(id);
+    // Optimistic update
     setFavorites((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+
+    try {
+      if (isFav) {
+        const res = await favoriteAPI.remove(id);
+        updateFavorites(res.favorites);
+      } else {
+        const res = await favoriteAPI.add(id);
+        updateFavorites(res.favorites);
+      }
+    } catch {
+      // Revert on error
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        if (isFav) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+    }
   };
 
-  const filteredTemplates = useMemo(() => {
-    let result = [...templates];
-
-    // Category filter
-    if (activeCategory !== "All Templates") {
-      result = result.filter((t) => t.category === activeCategory);
-    }
-
-    // Search filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(q) ||
-          t.description.toLowerCase().includes(q)
-      );
-    }
-
-    // Tab filter
-    if (activeTab === "Popular") {
-      result = result.filter((t) => t.isPopular);
-    } else if (activeTab === "Free") {
-      result = result.filter((t) => t.isFree);
-    } else {
-      result.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-    }
-
-    return result;
-  }, [searchQuery, activeCategory, activeTab]);
-
-  const totalPages = Math.ceil(filteredTemplates.length / ITEMS_PER_PAGE);
-  const paginatedTemplates = filteredTemplates.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Reset page when filters change
   const handleCategoryChange = (cat) => {
     setActiveCategory(cat);
     setCurrentPage(1);
@@ -108,20 +132,29 @@ const Index = () => {
                 Legal Templates
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {filteredTemplates.length} templates available
+                {total} templates available
               </p>
             </div>
             <FilterTabs activeTab={activeTab} onTabChange={handleTabChange} />
           </div>
 
           {/* Grid */}
-          {paginatedTemplates.length > 0 ? (
+          {loading ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {paginatedTemplates.map((template) => (
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-64 animate-pulse rounded-xl border border-border bg-card"
+                />
+              ))}
+            </div>
+          ) : templates.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {templates.map((template) => (
                 <TemplateCard
-                  key={template.id}
+                  key={template._id}
                   template={template}
-                  isFavorited={favorites.has(template.id)}
+                  isFavorited={favorites.has(template._id)}
                   onToggleFavorite={toggleFavorite}
                 />
               ))}
