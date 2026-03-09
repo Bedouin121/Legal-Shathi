@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import AiChatbot from "./components/AiChatbot";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const AppRoutes = () => (
       <Route path="/chat" element={<Chat />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </>
