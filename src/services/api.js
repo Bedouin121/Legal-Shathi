@@ -91,3 +91,15 @@ export const chatAPI = {
   deleteSession: (id) =>
     apiFetch(`/chat/history/${id}`, { method: "DELETE" }),
 };
+
+// ==================== Documents ====================
+export const documentAPI = {
+  getFields: (templateTitle) =>
+    apiFetch(`/documents/fields/${encodeURIComponent(templateTitle)}`),
+
+  generate: (templateTitle, formData, language = "english") =>
+    apiFetch("/documents/generate", {
+      method: "POST",
+      body: JSON.stringify({ templateTitle, formData, language }),
+    }),
+};

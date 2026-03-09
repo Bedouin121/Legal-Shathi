@@ -9,6 +9,7 @@ import Chat from "./pages/Chat";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import TemplateDetail from "./pages/TemplateDetail";
 import AiChatbot from "./components/AiChatbot";
 
 const queryClient = new QueryClient();
@@ -16,7 +17,7 @@ const queryClient = new QueryClient();
 const FloatingChatbot = () => {
   const location = useLocation();
   const hidePaths = ["/chat", "/login", "/register"];
-  if (hidePaths.includes(location.pathname)) return null;
+  if (hidePaths.includes(location.pathname) || location.pathname.startsWith("/template/")) return null;
   return <AiChatbot />;
 };
 
@@ -28,6 +29,7 @@ const AppRoutes = () => (
       <Route path="/chat" element={<Chat />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/template/:id" element={<TemplateDetail />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </>

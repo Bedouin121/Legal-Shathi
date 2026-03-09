@@ -1,4 +1,5 @@
 import { Heart, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ const categoryColors = {
 const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
   const colorClass = categoryColors[template.category];
   const templateId = template._id || template.id;
+  const navigate = useNavigate();
 
   return (
     <div className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 animate-fade-in">
@@ -66,6 +68,7 @@ const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
       <Button
         variant="ghost"
         className="w-full justify-between border border-border text-sm text-primary hover:bg-primary/10 hover:text-primary"
+        onClick={() => navigate(`/template/${templateId}`)}
       >
         View Template
         <ArrowRight className="h-4 w-4" />

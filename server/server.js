@@ -10,6 +10,7 @@ import authRoutes from "./routes/authRoutes.js";
 import templateRoutes from "./routes/templateRoutes.js";
 import favoriteRoutes from "./routes/favoriteRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import documentRoutes from "./routes/documentRoutes.js";
 
 // Load env vars
 dotenv.config();
@@ -43,6 +44,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/documents", documentRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
