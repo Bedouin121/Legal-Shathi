@@ -1,6 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { getTemplateFields, generateDocument } from "../controllers/documentController.js";
+import { getTemplateFields, generateDocument, generateDocumentStream } from "../controllers/documentController.js";
 
 const router = express.Router();
 
@@ -13,5 +13,6 @@ const docLimiter = rateLimit({
 
 router.get("/fields/:templateTitle", getTemplateFields);
 router.post("/generate", docLimiter, generateDocument);
+router.post("/generate/stream", docLimiter, generateDocumentStream);
 
 export default router;

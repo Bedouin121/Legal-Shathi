@@ -17,25 +17,19 @@ const TemplateDetail = () => {
   const [language, setLanguage] = useState("english");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [generatedDoc, setGeneratedDoc] = useState(null);
+  const [generatedDoc, setGeneratedDoc] = useState("");
   const [error, setError] = useState(null);
   const [step, setStep] = useState("form"); // "form" | "preview"
 
-  // Load template and fields
   useEffect(() => {
     const loadTemplate = async () => {
       try {
         const tmpl = await templateAPI.getOne(id);
         setTemplate(tmpl);
-
         const fieldData = await documentAPI.getFields(tmpl.title);
         setFields(fieldData.fields);
-
-        // Initialize form with empty values
         const initial = {};
-        fieldData.fields.forEach((f) => {
-          initial[f.name] = "";
-        });
+        fieldData.fields.forEach((f) => { initial[f.name] = ""; });
         setFormData(initial);
       } catch (err) {
         setError(err.message);
@@ -54,53 +48,46 @@ const TemplateDetail = () => {
     e.preventDefault();
     setGenerating(true);
     setError(null);
+    setGeneratedDoc("");
+    setStep("preview");
 
     try {
-      const result = await documentAPI.generate(template.title, formData, language);
-      setGeneratedDoc(result.document);
-      setStep("preview");
+      await documentAPI.generateStream(
+        template.title,
+        formData,
+        language,
+        (chunk, fullText) => {
+          setGeneratedDoc(fullText);
+        }
+      );
     } catch (err) {
       setError(err.message || "Failed to generate document");
+      if (!generatedDoc) setStep("form");
     } finally {
       setGenerating(false);
     }
   };
 
   const handlePrint = () => {
-    const printContents = printRef.current.innerHTML;
+    const printContents = printRef.current?.innerText || generatedDoc;
     const win = window.open("", "_blank");
     win.document.write(`
       <html>
       <head>
         <title>${template.title} - Legal Shathi</title>
         <style>
-          @page { size: A4; margin: 0; }
-          body { margin: 0; padding: 0; }
-          .stamp-page {
-            width: 210mm;
-            min-height: 297mm;
-            background-image: url('/stamp-paper.png');
-            background-size: 100% auto;
-            background-repeat: no-repeat;
-            background-position: top center;
-            padding: 200px 60px 80px 60px;
-            box-sizing: border-box;
+          @page { size: A4; margin: 20mm; }
+          body {
+            margin: 0; padding: 0;
             font-family: 'Times New Roman', Georgia, serif;
-          }
-          .doc-content {
-            font-size: 13px;
-            line-height: 1.9;
+            font-size: 13px; line-height: 1.8;
             color: #1a1a1a;
             white-space: pre-wrap;
             word-wrap: break-word;
           }
         </style>
       </head>
-      <body>
-        <div class="stamp-page">
-          <div class="doc-content">${generatedDoc.replace(/\n/g, "<br>")}</div>
-        </div>
-      </body>
+      <body>${printContents.replace(/\n/g, "<br>")}</body>
       </html>
     `);
     win.document.close();
@@ -130,9 +117,7 @@ const TemplateDetail = () => {
       <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <p className="text-destructive">{error}</p>
-        <button onClick={() => navigate("/")} className="text-primary hover:underline">
-          Go back
-        </button>
+        <button onClick={() => navigate("/")} className="text-primary hover:underline">Go back</button>
       </div>
     );
   }
@@ -141,7 +126,7 @@ const TemplateDetail = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-xl">
-        <div className="flex items-center justify-between px-4 sm:px-6 h-16">
+        <div className="flex items-center justify-between px-4 sm:px-6 h-14">
           <div className="flex items-center gap-3">
             <button
               onClick={() => step === "preview" ? setStep("form") : navigate("/")}
@@ -149,29 +134,27 @@ const TemplateDetail = () => {
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg">
-                <FileText className="h-5 w-5 text-primary-foreground" />
-              </div>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
               <div>
-                <h1 className="font-display font-semibold text-foreground text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">
+                <h1 className="font-semibold text-foreground text-sm truncate max-w-[200px] sm:max-w-none">
                   {template?.title}
                 </h1>
                 <span className="text-xs text-muted-foreground">
-                  {step === "form" ? "Fill in details" : "Document Preview"}
+                  {step === "form" ? "Fill in details" : generating ? "Generating..." : "Document Preview"}
                 </span>
               </div>
             </div>
           </div>
 
-          {step === "preview" && (
+          {step === "preview" && !generating && generatedDoc && (
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrint}
                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-border text-foreground hover:bg-secondary transition-colors"
               >
                 <Printer className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Print on Stamp Paper</span>
+                <span className="hidden sm:inline">Print</span>
               </button>
               <button
                 onClick={handleDownload}
@@ -186,32 +169,15 @@ const TemplateDetail = () => {
       </header>
 
       {step === "form" ? (
-        /* ======= FORM STEP ======= */
+        /* ======= FORM ======= */
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-          {/* Template Info Card */}
-          <div className="mb-8 rounded-2xl border border-border bg-card p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="font-display text-xl font-bold text-foreground">{template.title}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
-                <div className="flex gap-2 mt-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                    {template.category}
-                  </span>
-                  {template.languages.map((lang) => (
-                    <span key={lang} className="px-2.5 py-0.5 rounded-full text-xs bg-secondary text-muted-foreground">
-                      {lang}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* Template Info */}
+          <div className="mb-6 rounded-xl border border-border bg-card p-5">
+            <h2 className="font-bold text-lg text-foreground">{template.title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
           </div>
 
-          {/* Language Selector */}
+          {/* Language */}
           <div className="mb-6">
             <label className="text-sm font-medium text-foreground mb-2 block flex items-center gap-1.5">
               <Languages className="h-4 w-4 text-primary" />
@@ -230,7 +196,7 @@ const TemplateDetail = () => {
                     "px-4 py-2 rounded-xl text-sm border transition-all",
                     language === opt.value
                       ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/40"
                   )}
                 >
                   {language === opt.value && <Check className="inline h-3.5 w-3.5 mr-1" />}
@@ -240,7 +206,7 @@ const TemplateDetail = () => {
             </div>
           </div>
 
-          {/* Form */}
+          {/* Form Fields */}
           <form onSubmit={handleGenerate}>
             <div className="space-y-4">
               {fields.map((field) => (
@@ -286,31 +252,22 @@ const TemplateDetail = () => {
             <button
               type="submit"
               disabled={generating}
-              className="mt-8 w-full flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-violet-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all disabled:opacity-60"
+              className="mt-8 w-full flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-violet-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all disabled:opacity-60"
             >
-              {generating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating Document...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Generate Legal Document
-                </>
-              )}
+              <Sparkles className="h-4 w-4" />
+              Generate Legal Document
             </button>
 
             <p className="text-center text-xs text-muted-foreground/60 mt-3">
-              AI-generated document. Always verify with a licensed lawyer before legal use.
+              AI-generated document. Always verify with a licensed lawyer.
             </p>
           </form>
         </div>
       ) : (
-        /* ======= PREVIEW STEP — STAMP PAPER ======= */
+        /* ======= STAMP PAPER PREVIEW ======= */
         <div className="py-8 px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Action Bar */}
+          <div className="max-w-[750px] mx-auto">
+            {/* Actions */}
             <div className="mb-4 flex items-center justify-between">
               <button
                 onClick={() => setStep("form")}
@@ -319,65 +276,78 @@ const TemplateDetail = () => {
                 <ArrowLeft className="h-4 w-4" />
                 Edit Details
               </button>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrint}
-                  className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-lg border border-border text-foreground hover:bg-secondary transition-colors"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  Print on Stamp Paper
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Download Text
-                </button>
-              </div>
+              {!generating && generatedDoc && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrint}
+                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-border hover:bg-secondary transition-colors"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    Print
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Stamp Paper Preview */}
+            {/* Stamp Paper — stretches to fit all content */}
             <div
               ref={printRef}
-              className="relative mx-auto shadow-2xl shadow-black/40 rounded-lg overflow-hidden"
+              className="relative mx-auto shadow-2xl shadow-black/30 overflow-hidden"
               style={{
                 width: "100%",
-                maxWidth: "750px",
-                minHeight: "1060px",
-                backgroundImage: "url('/stamp-paper.png')",
-                backgroundSize: "100% auto",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "top center",
                 backgroundColor: "#f5f0e1",
+                border: "1px solid #d4c9a8",
               }}
             >
-              {/* Document content area - positioned below stamp header */}
+              {/* Stamp paper header image */}
               <div
-                className="relative"
                 style={{
-                  paddingTop: "250px",
-                  paddingBottom: "60px",
-                  paddingLeft: "55px",
-                  paddingRight: "55px",
+                  width: "100%",
+                  height: "200px",
+                  backgroundImage: "url('/stamp-paper.png')",
+                  backgroundSize: "100% auto",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "top center",
+                }}
+              />
+
+              {/* Document content — grows as text streams in */}
+              <div
+                style={{
+                  padding: "20px 55px 80px 55px",
+                  minHeight: "600px",
                 }}
               >
+                {generating && !generatedDoc && (
+                  <div className="flex items-center gap-3 text-gray-500 py-10">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">Generating your legal document...</span>
+                  </div>
+                )}
+
                 <div
                   className="text-[13px] leading-[1.9] text-gray-900 whitespace-pre-wrap break-words"
                   style={{ fontFamily: "'Times New Roman', Georgia, serif" }}
                 >
                   {generatedDoc}
+                  {generating && generatedDoc && (
+                    <span className="inline-block w-2 h-4 bg-gray-700 animate-pulse ml-0.5" />
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Disclaimer */}
-            <div className="mt-6 text-center">
-              <p className="text-xs text-muted-foreground/60">
-                This is a demo document generated by AI Shathi. For legal validity, this document must be printed on
-                government-issued stamp paper, signed by all parties, and registered at the relevant Sub-Registrar's office.
-              </p>
-            </div>
+            <p className="mt-6 text-center text-xs text-muted-foreground/60">
+              Demo document generated by AI Shathi. For legal validity, print on government-issued stamp paper and register at the Sub-Registrar's office.
+            </p>
           </div>
         </div>
       )}

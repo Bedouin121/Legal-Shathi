@@ -86,20 +86,29 @@ const AiChatbot = () => {
     setIsLoading(true);
     setError(null);
 
-    try {
-      let data;
-      if (user) {
-        // Authenticated: use chat/message (saves history)
-        data = await chatAPI.sendMessage(text, chatId);
-        setChatId(data.chatId);
-      } else {
-        // Guest: use chat/guest (no history)
-        data = await chatAPI.guestMessage(text, messages);
-      }
+    // Add a placeholder assistant message that we'll update as tokens stream in
+    const assistantIndex = messages.length + 1; // +1 for the user message we just added
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+    try {
+      const onChunk = (chunk, fullText) => {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[assistantIndex] = { role: "assistant", content: fullText };
+          return updated;
+        });
+      };
+
+      if (user) {
+        const result = await chatAPI.sendMessageStream(text, chatId, onChunk);
+        setChatId(result.chatId);
+      } else {
+        await chatAPI.guestStream(text, messages.slice(0, -1), onChunk);
+      }
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
+      // Remove empty assistant message on error
+      setMessages((prev) => prev.filter((_, i) => i !== assistantIndex || prev[i].content));
     } finally {
       setIsLoading(false);
     }

@@ -278,3 +278,74 @@ export const generateDocument = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Generate legal document with STREAMING
+// @route   POST /api/documents/generate/stream
+export const generateDocumentStream = async (req, res) => {
+  try {
+    const { templateTitle, formData, language = "english" } = req.body;
+
+    if (!templateTitle || !formData) {
+      return res.status(400).json({ message: "Template title and form data are required" });
+    }
+
+    const config = TEMPLATE_PROMPTS[templateTitle];
+    if (!config) {
+      return res.status(404).json({ message: "Template configuration not found" });
+    }
+
+    const details = Object.entries(formData)
+      .filter(([, val]) => val && val.trim())
+      .map(([key, val]) => {
+        const field = config.fields.find((f) => f.name === key);
+        return `${field ? field.label : key}: ${val}`;
+      })
+      .join("\n");
+
+    const languageInstruction = language === "bengali"
+      ? "Write the ENTIRE document in Bengali (বাংলা). All text must be in Bengali script."
+      : language === "mixed"
+        ? "Write Bengali section headers with English body text."
+        : "Write the document primarily in English with Bengali terms where legally appropriate.";
+
+    const userPrompt = `Generate a complete, ready-to-use legal document with the following details:\n\n${details}\n\n${languageInstruction}\n\nIMPORTANT: Generate ONLY the document text. Do NOT include any explanations, notes, or markdown formatting. The document should be ready to print on stamp paper. Use proper spacing, numbered clauses, and formal legal language. Include spaces for signatures at the end.`;
+
+    // SSE headers
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+
+    const client = getOpenAI();
+    const stream = await client.chat.completions.create({
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      messages: [
+        { role: "system", content: config.systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 3000,
+      temperature: 0.3,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  } catch (error) {
+    console.error("Doc stream error:", error);
+    if (!res.headersSent) {
+      if (error?.status === 429) {
+        return res.status(429).json({ message: "AI is busy. Please try again." });
+      }
+      return res.status(500).json({ message: "Document generation failed" });
+    }
+    res.write(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
+    res.end();
+  }
+};

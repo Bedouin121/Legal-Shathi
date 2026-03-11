@@ -108,17 +108,28 @@ const Chat = () => {
     setIsLoading(true);
     setError(null);
 
+    // Add placeholder assistant message for streaming
+    const assistantIndex = messages.length + 1;
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
     try {
-      let data;
+      const onChunk = (chunk, fullText) => {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[assistantIndex] = { role: "assistant", content: fullText };
+          return updated;
+        });
+      };
+
       if (user) {
-        data = await chatAPI.sendMessage(text, chatId);
-        setChatId(data.chatId);
+        const result = await chatAPI.sendMessageStream(text, chatId, onChunk);
+        setChatId(result.chatId);
       } else {
-        data = await chatAPI.guestMessage(text, messages);
+        await chatAPI.guestStream(text, messages.slice(0, -1), onChunk);
       }
-      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
+      setMessages((prev) => prev.filter((_, i) => i !== assistantIndex || prev[i].content));
     } finally {
       setIsLoading(false);
     }
