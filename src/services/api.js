@@ -58,27 +58,6 @@ export const authAPI = {
     apiFetch("/auth/profile-picture", { method: "DELETE" }),
 };
 
-// ==================== Upload ====================
-export const uploadAPI = {
-  uploadProfilePicture: (file) => {
-    const formData = new FormData();
-    formData.append("profilePicture", file);
-    return fetch(`${API_BASE}/upload/profile-picture`, {
-      method: "POST",
-      body: formData,
-    }).then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Upload failed");
-      return data;
-    });
-  },
-
-  deleteProfilePicture: (publicId) =>
-    apiFetch(`/upload/profile-picture/${encodeURIComponent(publicId)}`, {
-      method: "DELETE",
-    }),
-};
-
 // ==================== Templates ====================
 export const templateAPI = {
   getAll: (params = {}) => {
@@ -188,6 +167,11 @@ export const chatAPI = {
   getHistory: () => apiFetch("/chat/history"),
   getSession: (id) => apiFetch(`/chat/history/${id}`),
   deleteSession: (id) => apiFetch(`/chat/history/${id}`, { method: "DELETE" }),
+};
+
+// ==================== Analytics ====================
+export const analyticsAPI = {
+  get: () => apiFetch("/analytics"),
 };
 
 // ==================== Documents ====================

@@ -1,5 +1,15 @@
 import mongoose from "mongoose";
 
+const fieldSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    label: { type: String, required: true },
+    type: { type: String, default: "text" },
+    required: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 const templateSchema = new mongoose.Schema(
   {
     title: {
@@ -27,6 +37,14 @@ const templateSchema = new mongoose.Schema(
     isPopular: {
       type: Boolean,
       default: false,
+    },
+    fields: {
+      type: [fieldSchema],
+      default: [],
+    },
+    systemPrompt: {
+      type: String,
+      default: "",
     },
     content: {
       type: String,

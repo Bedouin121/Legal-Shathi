@@ -69,29 +69,74 @@ const TemplateDetail = () => {
   };
 
   const handlePrint = () => {
-    const printContents = printRef.current?.innerText || generatedDoc;
+    // Use the raw text to preserve exact formatting, without browser UI wrappers
+    const printContents = generatedDoc;
+    
+    // Get absolute URL for the image so it loads correctly in the new about:blank window
+    const baseUrl = window.location.protocol + "//" + window.location.host;
+    
     const win = window.open("", "_blank");
     win.document.write(`
       <html>
       <head>
         <title>${template.title} - Legal Shathi</title>
         <style>
-          @page { size: A4; margin: 20mm; }
+          /* Strict A4 format with standard legal margins */
+          @page { 
+            size: A4; 
+            margin: 20mm; 
+          }
+          
+          /* Force browsers to print the background image without user intervention */
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          }
+          
           body {
-            margin: 0; padding: 0;
+            margin: 0; 
+            padding: 0;
             font-family: 'Times New Roman', Georgia, serif;
-            font-size: 13px; line-height: 1.8;
+            font-size: 15px; /* Professional legal document size */
+            line-height: 1.8;
             color: #1a1a1a;
+            position: relative;
+          }
+
+          /* The physical Stamp Paper Background */
+          .stamp-bg {
+            position: absolute;
+            top: -20mm;  /* Offset the 20mm @page margin so it reaches the physical paper edges */
+            left: -20mm;
+            width: 210mm;
+            height: 297mm;
+            background-image: url('${baseUrl}/stamp-paper.png');
+            background-size: 210mm 297mm;
+            background-repeat: no-repeat;
+            z-index: -1;
+          }
+
+          /* The Legal Text */
+          .content {
+            margin-top: 110mm; /* Pushes the first paragraph below the stamp's static printed design */
             white-space: pre-wrap;
             word-wrap: break-word;
+            text-align: justify;
           }
         </style>
       </head>
-      <body>${printContents.replace(/\n/g, "<br>")}</body>
+      <body>
+        <div class="stamp-bg"></div>
+        <div class="content">${printContents.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+      </body>
       </html>
     `);
     win.document.close();
-    setTimeout(() => win.print(), 500);
+    
+    // Give the image 800ms to load before forcing the print dialog
+    setTimeout(() => win.print(), 800);
   };
 
   const handleDownload = () => {

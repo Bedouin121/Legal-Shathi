@@ -11,8 +11,7 @@ import templateRoutes from "./routes/templateRoutes.js";
 import favoriteRoutes from "./routes/favoriteRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
-import uploadRoutes from "./routes/uploadRoutes.js";
-
+import analyticsRoutes from "./routes/analyticsRoutes.js";
 // Load env vars
 dotenv.config();
 
@@ -24,10 +23,22 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// CORS — allow frontend
+const configuredClientUrl = process.env.CLIENT_URL || "http://localhost:8080";
+const allowedOrigins = new Set([
+  configuredClientUrl,
+  "http://localhost:8080",
+  "http://127.0.0.1:8080",
+  "http://[::1]:8080",
+]);
+
+// CORS - allow local frontend variants
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:8080",
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.has(origin)) return callback(null, true);
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );
@@ -37,7 +48,7 @@ app.use(express.json({ limit: "10mb" }));
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "Legal Shathi API is running 🚀" });
+  res.json({ status: "ok", message: "Legal Shathi API is running" });
 });
 
 // Routes
@@ -46,7 +57,7 @@ app.use("/api/templates", templateRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/documents", documentRoutes);
-app.use("/api/upload", uploadRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
@@ -54,7 +65,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 Legal Shathi API running on port ${PORT}`);
-  console.log(`   Health: http://localhost:${PORT}/api/health`);
-  console.log(`   Env: ${process.env.NODE_ENV || "development"}\n`);
+  console.log(`\nLegal Shathi API running on port ${PORT}`);
+  console.log(`Health: http://localhost:${PORT}/api/health`);
+  console.log(`Env: ${process.env.NODE_ENV || "development"}\n`);
 });

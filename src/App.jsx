@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import TemplateDetail from "./pages/TemplateDetail";
 import AiChatbot from "./components/AiChatbot";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import Templates from "./pages/Templates";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const AppRoutes = () => (
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/template/:id" element={<TemplateDetail />} />
+      <Route path="/templates" element={<Templates />} />
       <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

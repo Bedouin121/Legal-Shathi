@@ -125,7 +125,7 @@ const Chat = () => {
         const result = await chatAPI.sendMessageStream(text, chatId, onChunk);
         setChatId(result.chatId);
       } else {
-        await chatAPI.guestStream(text, messages.slice(0, -1), onChunk);
+        await chatAPI.guestStream(text, messages, onChunk);
       }
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");

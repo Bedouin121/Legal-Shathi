@@ -1,34 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { User, Upload, X, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadAPI } from "@/services/api";
+import { authAPI } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 const ProfileDropdown = () => {
+  const { user, updateUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
-  const [profilePicture, setProfilePicture] = useState(null);
-  const [publicId, setPublicId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Hardcoded user data
-  const user = {
-    name: "Admin",
-    email: "admin@gmail.com",
-    role: "admin"
-  };
-
-  // Load profile picture from localStorage on mount
-  useEffect(() => {
-    const savedPicture = localStorage.getItem("profilePicture");
-    const savedPublicId = localStorage.getItem("profilePicturePublicId");
-    if (savedPicture) {
-      setProfilePicture(savedPicture);
-      setPublicId(savedPublicId);
-    }
-  }, []);
+  const profilePicture = user?.profilePicture || null;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -45,39 +30,21 @@ const ProfileDropdown = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       alert("Please select an image file");
       return;
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("Image size must be less than 5MB");
       return;
     }
 
     setUploading(true);
-    
-    try {
-      // Delete old image from Cloudinary if exists
-      if (publicId) {
-        try {
-          await uploadAPI.deleteProfilePicture(publicId);
-        } catch (err) {
-          console.error("Failed to delete old image:", err);
-        }
-      }
 
-      // Upload to Cloudinary
-      const data = await uploadAPI.uploadProfilePicture(file);
-      
-      // Save to state and localStorage
-      setProfilePicture(data.url);
-      setPublicId(data.publicId);
-      localStorage.setItem("profilePicture", data.url);
-      localStorage.setItem("profilePicturePublicId", data.publicId);
-      
+    try {
+      const data = await authAPI.uploadProfilePicture(file);
+      updateUser(data);
       alert("Profile picture uploaded successfully!");
     } catch (err) {
       console.error("Upload error:", err);
@@ -91,21 +58,13 @@ const ProfileDropdown = () => {
   };
 
   const handleRemovePicture = async () => {
-    if (!publicId) return;
-
     const confirmed = confirm("Are you sure you want to remove your profile picture?");
     if (!confirmed) return;
 
     setDeleting(true);
     try {
-      await uploadAPI.deleteProfilePicture(publicId);
-      
-      // Clear state and localStorage
-      setProfilePicture(null);
-      setPublicId(null);
-      localStorage.removeItem("profilePicture");
-      localStorage.removeItem("profilePicturePublicId");
-      
+      const data = await authAPI.deleteProfilePicture();
+      updateUser(data);
       alert("Profile picture removed successfully!");
     } catch (err) {
       console.error("Delete error:", err);
@@ -127,7 +86,7 @@ const ProfileDropdown = () => {
             {profilePicture ? (
               <img
                 src={profilePicture}
-                alt={user.name}
+                alt={user?.name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -155,7 +114,7 @@ const ProfileDropdown = () => {
                   {profilePicture ? (
                     <img
                       src={profilePicture}
-                      alt={user.name}
+                      alt={user?.name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -238,20 +197,20 @@ const ProfileDropdown = () => {
             <div className="p-4 space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Name</p>
-                <p className="text-sm font-medium text-foreground">{user.name}</p>
+                <p className="text-sm font-medium text-foreground">{user?.name}</p>
               </div>
 
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Role</p>
                 <p className="text-sm font-medium text-foreground capitalize">
-                  {user.role}
+                  {user?.role}
                 </p>
               </div>
 
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Email</p>
                 <p className="text-sm font-medium text-foreground break-all">
-                  {user.email}
+                  {user?.email}
                 </p>
               </div>
             </div>
@@ -259,7 +218,7 @@ const ProfileDropdown = () => {
         )}
       </div>
 
-      {/* Full Image Modal - rendered via portal to escape stacking context */}
+      {/* Full Image Modal */}
       {showFullImage && profilePicture && (
         <div
           onClick={() => setShowFullImage(false)}
@@ -278,7 +237,6 @@ const ProfileDropdown = () => {
             justifyContent: "center",
           }}
         >
-          {/* Close button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -305,10 +263,9 @@ const ProfileDropdown = () => {
             <X size={24} />
           </button>
 
-          {/* Image */}
           <img
             src={profilePicture}
-            alt={user.name}
+            alt={user?.name}
             onClick={(e) => e.stopPropagation()}
             style={{
               maxWidth: "90vw",
