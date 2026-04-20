@@ -1,4 +1,5 @@
-import { Bar, Pie, Line } from 'react-chartjs-2';
+import { useEffect, useState } from "react";
+import { Bar, Pie, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,7 +11,7 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+} from "chart.js";
 
 // Register Chart.js components
 ChartJS.register(
@@ -24,54 +25,54 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-import { Card } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
-
-// Hardcoded analytics data
-const analyticsData = {
-  totalUsers: 1200,
-  generatedDocuments: 3400,
-  popularTemplates: [
-    { name: 'Business Contract', count: 800 },
-    { name: 'Personal Will', count: 600 },
-    { name: 'Property Lease', count: 500 },
-    { name: 'Employment Offer', count: 400 },
-  ],
-  apiUsage: [
-    { month: 'Jan', count: 200 },
-    { month: 'Feb', count: 300 },
-    { month: 'Mar', count: 400 },
-    { month: 'Apr', count: 350 },
-    { month: 'May', count: 500 },
-  ],
-  storageUsed: 2.5, // in GB
-};
+import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import { analyticsAPI } from "@/services/api";
 
 const AnalyticsDashboard = () => {
   const navigate = useNavigate();
-  // Chart data
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await analyticsAPI.getSummary();
+        setAnalytics(data);
+      } catch (err) {
+        console.error("Failed to load analytics", err);
+        setError("Failed to load analytics data. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAnalytics();
+  }, []);
+
   const popularTemplatesData = {
-    labels: analyticsData.popularTemplates.map(t => t.name),
+    labels: (analytics?.popularTemplates ?? []).map((t) => t.name),
     datasets: [
       {
-        label: 'Usage',
-        data: analyticsData.popularTemplates.map(t => t.count),
-        backgroundColor: [
-          '#3f42e4', '#f59e42', '#10b981', '#ef4444'
-        ],
+        label: "Usage",
+        data: (analytics?.popularTemplates ?? []).map((t) => t.count),
+        backgroundColor: ["#3f42e4", "#f59e42", "#10b981", "#ef4444"],
       },
     ],
   };
 
   const apiUsageData = {
-    labels: analyticsData.apiUsage.map(u => u.month),
+    labels: (analytics?.apiUsage ?? []).map((u) => u.month),
     datasets: [
       {
-        label: 'API Calls',
-        data: analyticsData.apiUsage.map(u => u.count),
+        label: "API Calls",
+        data: (analytics?.apiUsage ?? []).map((u) => u.count),
         fill: false,
-        borderColor: '#6366f1',
-        backgroundColor: '#6366f1',
+        borderColor: "#6366f1",
+        backgroundColor: "#6366f1",
         tension: 0.4,
       },
     ],
@@ -89,30 +90,55 @@ const AnalyticsDashboard = () => {
           Go Back
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 text-center">
-          <div className="text-4xl font-bold">{analyticsData.totalUsers}</div>
-          <div className="text-muted-foreground mt-2">Total Users</div>
-        </Card>
-        <Card className="p-6 text-center">
-          <div className="text-4xl font-bold">{analyticsData.generatedDocuments}</div>
-          <div className="text-muted-foreground mt-2">Generated Documents</div>
-        </Card>
-        <Card className="p-6 text-center">
-          <div className="text-4xl font-bold">{analyticsData.storageUsed} GB</div>
-          <div className="text-muted-foreground mt-2">Storage Used</div>
-        </Card>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="font-semibold mb-2">Popular Templates</h2>
-          <Pie data={popularTemplatesData} />
-        </Card>
-        <Card className="p-6">
-          <h2 className="font-semibold mb-2">API Usage (Monthly)</h2>
-          <Line data={apiUsageData} />
-        </Card>
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card
+              key={i}
+              className="h-32 animate-pulse rounded-xl border border-border bg-card"
+            />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <Card className="p-6 text-center">
+              <div className="text-4xl font-bold">
+                {analytics?.totalUsers ?? 0}
+              </div>
+              <div className="mt-2 text-muted-foreground">Total Users</div>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="text-4xl font-bold">
+                {analytics?.generatedDocuments ?? 0}
+              </div>
+              <div className="mt-2 text-muted-foreground">
+                Generated Documents (approx.)
+              </div>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="text-4xl font-bold">
+                {analytics?.storageUsed ?? 0} GB
+              </div>
+              <div className="mt-2 text-muted-foreground">Storage Used</div>
+            </Card>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Card className="p-6">
+              <h2 className="mb-2 font-semibold">Popular Templates</h2>
+              <Pie data={popularTemplatesData} />
+            </Card>
+            <Card className="p-6">
+              <h2 className="mb-2 font-semibold">API Usage (Monthly)</h2>
+              <Line data={apiUsageData} />
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   );
 };

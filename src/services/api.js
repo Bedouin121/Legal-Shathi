@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:1630/api";
 
 const getToken = () => localStorage.getItem("token");
 
@@ -36,6 +36,14 @@ export const authAPI = {
     apiFetch("/auth/login", { method: "POST", body: JSON.stringify(body) }),
 
   getMe: () => apiFetch("/auth/me"),
+
+  logout: () => apiFetch("/auth/logout", { method: "POST" }),
+
+  sendOtp: (body) =>
+    apiFetch("/auth/send-otp", { method: "POST", body: JSON.stringify(body) }),
+
+  verifyOtp: (body) =>
+    apiFetch("/auth/verify-otp", { method: "POST", body: JSON.stringify(body) }),
 
   uploadProfilePicture: (file) => {
     const formData = new FormData();
@@ -202,9 +210,13 @@ export const documentAPI = {
     }),
 
   generateStream: async (templateTitle, formData, language = "english", onChunk) => {
+    const token = getToken();
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    
     const res = await fetch(`${API_BASE}/documents/generate/stream`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ templateTitle, formData, language }),
     });
 
@@ -242,4 +254,9 @@ export const documentAPI = {
     }
     return fullText;
   },
+};
+
+// ==================== Analytics ====================
+export const analyticsAPI = {
+  getSummary: () => apiFetch("/analytics/summary"),
 };

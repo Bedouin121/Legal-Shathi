@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { User, Upload, X, Loader2, Trash2 } from "lucide-react";
+import { User, Upload, X, Loader2, Trash2, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadAPI } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 const ProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,13 +13,7 @@ const ProfileDropdown = () => {
   const [deleting, setDeleting] = useState(false);
   const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
-
-  // Hardcoded user data
-  const user = {
-    name: "Admin",
-    email: "admin@gmail.com",
-    role: "admin"
-  };
+  const { user, logout } = useAuth();
 
   // Load profile picture from localStorage on mount
   useEffect(() => {
@@ -254,6 +249,15 @@ const ProfileDropdown = () => {
                   {user.email}
                 </p>
               </div>
+
+              {/* Logout Button */}
+              <button
+                onClick={logout}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
             </div>
           </div>
         )}

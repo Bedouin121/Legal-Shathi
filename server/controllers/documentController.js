@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { sendEmail } from "../utils/emailService.js";
 
 let openai = null;
 const getOpenAI = () => {
@@ -36,17 +37,15 @@ const TEMPLATE_PROMPTS = {
     fields: [
       { name: "landlordName", label: "Landlord's Full Name (বাড়িওয়ালার নাম)", required: true },
       { name: "landlordAddress", label: "Landlord's Address", required: true },
-      { name: "landlordNID", label: "Landlord's NID Number", required: true },
-      { name: "tenantName", label: "Tenant's Full Name (ভাড়াটিয়ার নাম)", required: true },
-      { name: "tenantAddress", label: "Tenant's Permanent Address", required: true },
-      { name: "tenantNID", label: "Tenant's NID Number", required: true },
-      { name: "propertyAddress", label: "Rental Property Address", required: true },
+      { name: "tenantName", label: "Tenant's Full Name (ভাড়িওয়া)", required: true },
+      { name: "tenantAddress", label: "Tenant's Address", required: true },
+      { name: "propertyAddress", label: "Property Address", required: true },
       { name: "monthlyRent", label: "Monthly Rent (BDT)", required: true },
       { name: "securityDeposit", label: "Security Deposit (BDT)", required: true },
       { name: "duration", label: "Lease Duration (months/years)", required: true },
       { name: "startDate", label: "Lease Start Date", type: "date", required: true },
     ],
-    systemPrompt: `You are a Bangladeshi legal document drafting expert. Generate a formal Rental/Tenancy Agreement (ভাড়া চুক্তিপত্র) in proper legal format. Include standard clauses: parties, property description, rent amount, payment schedule, security deposit, maintenance responsibilities, termination conditions, notice period, restrictions, utility charges, and witness section. Use Bengali headers with English body.`,
+    systemPrompt: `You are a Bangladeshi legal document drafting expert. Generate a formal Rental Agreement (ভাড়া চুক্তিপত্র) in proper legal format. Include standard clauses: parties, property description, rent amount, payment schedule, security deposit, maintenance responsibilities, termination conditions, notice period, restrictions, utility charges, and witness section. Use Bengali headers with English body.`,
   },
   "Business Partnership Deed": {
     fields: [
@@ -266,10 +265,87 @@ export const generateDocument = async (req, res, next) => {
 
     const document = completion.choices[0].message.content;
 
+    const generatedAt = new Date().toISOString();
+
+    // Optional notification email: either from authenticated user or explicit notifyEmail
+    const notifyEmail = req.body.notifyEmail || req.user?.email;
+    console.log("[DocGen] Request user:", req.user);
+    console.log("[DocGen] User email from request:", notifyEmail);
+    
+    // Use authenticated user's email - NO fallback
+    const userEmail = notifyEmail;
+    console.log("[DocGen] Final email to send:", userEmail);
+    
+    if (userEmail) {
+      try {
+        const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
+        console.log("[DocGen] Sending email to:", userEmail);
+        console.log("[DocGen] Document title:", templateTitle);
+        console.log("[DocGen] Signing URL:", signUrl);
+        
+        // Send combined email with document generation notification AND signature request
+        await sendEmail({
+          to: userEmail,
+          subject: `Document Generated: "${templateTitle}" - Signature Requested`,
+          text: `Your document "${templateTitle}" has been generated at ${generatedAt}.\n\nA signature request has been initiated. Please review and sign the document when ready.\n\nSigning Link: ${signUrl}\n\nThis link will expire in 7 days.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
+                <h2 style="margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">Document Generated Successfully! 🎉</h2>
+                <p style="margin: 0 0 15px 0; font-size: 16px;">Your document <strong>"${templateTitle}"</strong> is ready for review and signature.</p>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">📄 Document Details</h3>
+                <ul style="margin: 0 0 20px 0; padding-left: 20px; color: #555;">
+                  <li style="margin-bottom: 8px;"><strong>Document Title:</strong> ${templateTitle}</li>
+                  <li style="margin-bottom: 8px;"><strong>Generated:</strong> ${new Date(generatedAt).toLocaleString()}</li>
+                  <li style="margin-bottom: 8px;"><strong>Status:</strong> Ready for Signature</li>
+                </ul>
+              </div>
+              
+              <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">✍️ Signature Required</h3>
+                <p style="margin: 0 0 15px 0; color: #555; line-height: 1.5;">Please review your document and provide your digital signature using the secure link below:</p>
+                
+                <div style="text-align: center; margin: 25px 0;">
+                  <a href="${signUrl}" 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">
+                    Sign Document Now
+                  </a>
+                </div>
+                
+                <p style="margin: 20px 0 0 0; color: #888; font-size: 14px; text-align: center;">
+                  <strong>⏰ Important:</strong> This signature link will expire in 7 days for security reasons.
+                </p>
+              </div>
+              
+              <div style="background: #f1f3f4; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
+                  Best regards,<br>
+                  <strong>Legal Shathi Team</strong><br>
+                  <span style="color: #888; font-size: 12px;">Automated Document Generation System</span>
+                </p>
+              </div>
+            </div>
+          `,
+        });
+        
+        console.log("✅ [Combined Email] Document generation + signature request email sent successfully to:", userEmail);
+      } catch (err) {
+        console.warn("❌ [Docs] Failed to send combined email", err?.message);
+        console.warn("❌ [Docs] Error details:", err);
+      }
+    } else {
+      console.log("❌ [DocGen] No user email found - skipping email notification");
+    }
+
     res.json({
       document,
       templateTitle,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
     });
   } catch (error) {
     if (error?.status === 429) {
@@ -328,15 +404,96 @@ export const generateDocumentStream = async (req, res) => {
       stream: true,
     });
 
+    let fullDocument = "";
+
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
       if (content) {
+        fullDocument += content;
         res.write(`data: ${JSON.stringify({ content })}\n\n`);
       }
     }
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
+
+    // Fire-and-forget email after stream completes
+    const generatedAt = new Date().toISOString();
+    const notifyEmail = req.body.notifyEmail || req.user?.email;
+    console.log("[DocGen Stream] Request user:", req.user);
+    console.log("[DocGen Stream] User email from request:", notifyEmail);
+    
+    // Use authenticated user's email - NO fallback
+    const userEmail = notifyEmail;
+    console.log("[DocGen Stream] Final email to send:", userEmail);
+    
+    if (userEmail) {
+      (async () => {
+        try {
+          const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
+          console.log("[DocGen Stream] Sending email to:", userEmail);
+          console.log("[DocGen Stream] Document title:", templateTitle);
+          console.log("[DocGen Stream] Signing URL:", signUrl);
+          
+          // Send combined email with document generation notification AND signature request
+          await sendEmail({
+            to: userEmail,
+            subject: `Document Generated: "${templateTitle}" - Signature Requested`,
+            text: `Your document "${templateTitle}" has been generated at ${generatedAt}.\n\nA signature request has been initiated. Please review and sign the document when ready.\n\nSigning Link: ${signUrl}\n\nThis link will expire in 7 days.`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
+                  <h2 style="margin: 0 0 20px 0; font-size: 24px; font-weight: bold;">Document Generated Successfully! 🎉</h2>
+                  <p style="margin: 0 0 15px 0; font-size: 16px;">Your document <strong>"${templateTitle}"</strong> is ready for review and signature.</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">📄 Document Details</h3>
+                  <ul style="margin: 0 0 20px 0; padding-left: 20px; color: #555;">
+                    <li style="margin-bottom: 8px;"><strong>Document Title:</strong> ${templateTitle}</li>
+                    <li style="margin-bottom: 8px;"><strong>Generated:</strong> ${new Date(generatedAt).toLocaleString()}</li>
+                    <li style="margin-bottom: 8px;"><strong>Status:</strong> Ready for Signature</li>
+                  </ul>
+                </div>
+                
+                <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">✍️ Signature Required</h3>
+                  <p style="margin: 0 0 15px 0; color: #555; line-height: 1.5;">Please review your document and provide your digital signature using the secure link below:</p>
+                  
+                  <div style="text-align: center; margin: 25px 0;">
+                    <a href="${signUrl}" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">
+                      Sign Document Now
+                    </a>
+                  </div>
+                  
+                  <p style="margin: 20px 0 0 0; color: #888; font-size: 14px; text-align: center;">
+                    <strong>⏰ Important:</strong> This signature link will expire in 7 days for security reasons.
+                  </p>
+                </div>
+                
+                <div style="background: #f1f3f4; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                  <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
+                    Best regards,<br>
+                    <strong>Legal Shathi Team</strong><br>
+                    <span style="color: #888; font-size: 12px;">Automated Document Generation System</span>
+                  </p>
+                </div>
+              </div>
+            `,
+          });
+          
+          console.log("✅ [Combined Email] Document generation + signature request email sent successfully (stream) to:", userEmail);
+        } catch (err) {
+          console.warn("❌ [Docs] Failed to send combined email (stream)", err?.message);
+          console.warn("❌ [Docs] Error details:", err);
+        }
+      })();
+    } else {
+      console.log("❌ [DocGen Stream] No user email found - skipping email notification");
+    }
   } catch (error) {
     console.error("Doc stream error:", error);
     if (!res.headersSent) {

@@ -13,7 +13,10 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       authAPI
         .getMe()
-        .then((data) => setUser(data))
+        .then((data) => {
+          // Always set user if token exists (email is now verified by OTP flow)
+          setUser(data);
+        })
         .catch(() => {
           localStorage.removeItem("token");
         })
@@ -25,6 +28,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const data = await authAPI.login({ email, password });
+    
+    // Check if email verification is required
+    if (data.requiresVerification) {
+      throw new Error(data.message);
+    }
+    
     localStorage.setItem("token", data.token);
     setUser(data);
     return data;
@@ -37,9 +46,17 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
+  const logout = async () => {
+    try {
+      // Call backend logout endpoint (optional, for API consistency)
+      await authAPI.logout();
+    } catch (error) {
+      console.warn("Logout API call failed:", error);
+    } finally {
+      // Always clear local state regardless of API call success
+      localStorage.removeItem("token");
+      setUser(null);
+    }
   };
 
   const updateFavorites = (favorites) => {

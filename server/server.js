@@ -12,6 +12,8 @@ import favoriteRoutes from "./routes/favoriteRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 // Load env vars
 dotenv.config();
@@ -47,11 +49,13 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 1630;
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Legal Shathi API running on port ${PORT}`);
