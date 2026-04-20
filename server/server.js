@@ -24,19 +24,22 @@ const app = express();
 app.use(helmet());
 
 const configuredClientUrl = process.env.CLIENT_URL || "http://localhost:8080";
-const allowedOrigins = new Set([
-  configuredClientUrl,
-  "http://localhost:8080",
-  "http://127.0.0.1:8080",
-  "http://[::1]:8080",
-]);
 
-// CORS - allow local frontend variants
+// Allow any localhost / 127.0.0.1 origin (Vite may use any port 5173-517x)
+const isLocalOrigin = (origin) => {
+  if (!origin) return true;
+  try {
+    const { hostname, port } = new URL(origin);
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") return true;
+  } catch (_) {}
+  return origin === configuredClientUrl;
+};
+
+// CORS - allow all localhost variants + configured CLIENT_URL
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.has(origin)) return callback(null, true);
+      if (isLocalOrigin(origin)) return callback(null, true);
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,

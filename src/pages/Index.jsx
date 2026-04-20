@@ -43,28 +43,7 @@ function useScrollProgress() {
   }, []);
 }
 
-function useCounters(active) {
-  const [counts, setCounts] = useState({ users: 0, templates: 0, queries: 0, accuracy: 0 });
-  const targets = { users: 1200, templates: 48, queries: 25000, accuracy: 97 };
-  useEffect(() => {
-    if (!active) return;
-    const duration = 1600;
-    const start = performance.now();
-    const tick = (now) => {
-      const t = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 3);
-      setCounts({
-        users: Math.round(targets.users * ease),
-        templates: Math.round(targets.templates * ease),
-        queries: Math.round(targets.queries * ease),
-        accuracy: Math.round(targets.accuracy * ease),
-      });
-      if (t < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [active]);
-  return counts;
-}
+
 
 /* ─── constants ─── */
 const FEATURES = [
@@ -244,10 +223,7 @@ const Index = () => {
   const [templates, setTemplates] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
   const [statsActive, setStatsActive] = useState(false);
-  const [activeModule, setActiveModule] = useState(0);
-  const [chatIdx, setChatIdx] = useState(0);
-  const [chatTyping, setChatTyping] = useState(false);
-  const counts = useCounters(statsActive);
+
 
   useScrollReveal();
   useScrollProgress();
@@ -311,65 +287,56 @@ const Index = () => {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }} className="hero-grid">
           {/* Left */}
           <div>
-            <div className="sr" style={{ display: "inline-flex", alignItems: "center", gap: 8,
+            <div className="sr sr-d1" style={{ display: "inline-flex", alignItems: "center", gap: 8,
               background: "var(--g50)", border: "1px solid var(--g200)",
               borderRadius: 99, padding: "6px 14px", marginBottom: 24,
               fontSize: ".8rem", fontWeight: 700, color: "var(--green)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
               <div className="pulse-dot" />
-              AI-Powered Legal Platform for Bangladesh
+              AI-Powered Legal Platform · Bangladesh
             </div>
 
             <h1 className="sr sr-d1" style={{ fontFamily: "'Playfair Display',serif",
               fontSize: "clamp(2.4rem,5vw,3.6rem)", fontWeight: 900, lineHeight: 1.1,
               color: "var(--ls-text)", marginBottom: 20 }}>
-              Your Legal{" "}
-              <span className="gradient-text">Companion</span>
-              <br />for Bangladesh
+              Your <em style={{ color: "var(--green)", fontStyle: "italic" }}>Legal</em>
+              <br /><em style={{ color: "var(--green)", fontStyle: "italic" }}>Companion</em>
+              <br />Powered by <strong style={{ color: "var(--ls-text)" }}>AI</strong>
             </h1>
 
             <p className="sr sr-d2" style={{ fontSize: "clamp(.95rem,1.5vw,1.1rem)", color: "var(--ls-text2)",
               lineHeight: 1.75, maxWidth: 480, marginBottom: 36, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-              Access 500+ laws in Bengali & English, generate court-ready documents with AI, and sign them digitally — all in one platform built for Bangladeshi citizens.
+              Access Bangladesh law, generate AI legal documents, analyze contracts, and get instant legal advice — in Bengali & English.
             </p>
 
-            <div className="sr sr-d3" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div className="sr sr-d3" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
               <button
                 onClick={(e) => { addRipple(e); navigate("/register"); }}
                 className="btn-shimmer"
                 style={{ position: "relative", overflow: "hidden", padding: "14px 28px",
-                  borderRadius: 14, border: "none",
-                  background: "linear-gradient(135deg,#22c55e,#15803d)",
-                  color: "#fff", fontWeight: 700, fontSize: "1rem", cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans',sans-serif",
-                  boxShadow: "0 6px 24px var(--green-glow)",
-                  transition: "transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s",
-                  display: "flex", alignItems: "center", gap: 8 }}
+                   borderRadius: 14, border: "none",
+                   background: "linear-gradient(135deg,#22c55e,#15803d)",
+                   color: "#fff", fontWeight: 700, fontSize: "1rem", cursor: "pointer",
+                   fontFamily: "'Plus Jakarta Sans',sans-serif",
+                   boxShadow: "0 6px 24px var(--green-glow)",
+                   transition: "transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s",
+                   display: "flex", alignItems: "center", gap: 8 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 36px var(--green-glow)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 6px 24px var(--green-glow)"; }}>
-                Get Started Free →
-              </button>
-              <button
-                onClick={(e) => { addRipple(e); navigate("/chat"); }}
-                style={{ position: "relative", overflow: "hidden", padding: "14px 28px",
-                  borderRadius: 14, border: "1.5px solid var(--ls-border)",
-                  background: "var(--ls-card)", color: "var(--ls-text)",
-                  fontWeight: 700, fontSize: "1rem", cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans',sans-serif",
-                  boxShadow: "var(--shadow-sm)", transition: "all .25s",
-                  display: "flex", alignItems: "center", gap: 8 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--ls-border)"; e.currentTarget.style.color = "var(--ls-text)"; }}>
-                🤖 Try AI Chat
+                Explore Platform →
               </button>
             </div>
 
-            <div className="sr sr-d4" style={{ display: "flex", gap: 24, marginTop: 40, flexWrap: "wrap" }}>
-              {[["1,200+","Active Users"],["48","Legal Templates"],["97%","AI Accuracy"]].map(([n,l]) => (
-                <div key={l} style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--green)" }}>{n}</div>
-                  <div style={{ fontSize: ".78rem", color: "var(--ls-text3)", marginTop: 2 }}>{l}</div>
-                </div>
-              ))}
+            <div className="sr sr-d4" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ display: "flex" }}>
+                {["#22c55e","#f59e0b","#6366f1","#0ea5e9"].map((c,i)=>(
+                  <div key={i} style={{ width: 34, height: 34, borderRadius: "50%", background: c, border: "2px solid var(--bg)", marginLeft: i>0 ? -10 : 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: ".8rem", fontWeight: 700 }}>
+                    {"KRSA"[i]}
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: ".85rem", color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                <strong style={{ color: "var(--ls-text)" }}>1,200+</strong> users trust Legal Shathi
+              </div>
             </div>
           </div>
 
@@ -385,10 +352,10 @@ const Index = () => {
         <div style={{ ...S.section, padding: "56px clamp(16px,5vw,80px)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 32, textAlign: "center" }} className="stats-grid">
             {[
-              [counts.users.toLocaleString() + "+", "Active Users", "👤"],
-              [counts.templates + "+", "Legal Templates", "📄"],
-              [counts.queries.toLocaleString() + "+", "AI Queries Answered", "🤖"],
-              [counts.accuracy + "%", "Document Accuracy", "✅"],
+              ["48+", "Legal Templates", "📄"],
+              ["24/7", "AI Legal Help", "🤖"],
+              ["Easy", "Format Export", "📤"],
+              ["100%", "Secure Data", "🔒"],
             ].map(([val, lbl, icon]) => (
               <div key={lbl} className="sr">
                 <div style={{ fontSize: "1.8rem", marginBottom: 4 }}>{icon}</div>
@@ -396,411 +363,6 @@ const Index = () => {
                 <div style={{ fontSize: ".84rem", color: "var(--ls-text2)", marginTop: 4, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{lbl}</div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════ FEATURES ══════════════════════ */}
-      <section id="features" style={{ padding: "96px clamp(16px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <div className="sr" style={{ textAlign: "center", marginBottom: 56 }}>
-            <span className="chip-g" style={S.chip}>Platform Features</span>
-            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, margin: "16px 0 12px" }}>
-              Everything You Need, Built for Bangladesh
-            </h2>
-            <p style={{ color: "var(--ls-text2)", maxWidth: 520, margin: "0 auto", fontSize: ".95rem", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-              Legal Shathi combines AI, law databases, and document tools in one seamless platform.
-            </p>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }} className="feat-grid">
-            {FEATURES.map((f, i) => (
-              <div key={f.title} className={`sr sr-d${Math.min(i + 1, 4)}`}>
-                <FeatCard feat={f} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════ HOW IT WORKS ══════════════════════ */}
-      <section style={{ background: "var(--bg2)", padding: "96px clamp(16px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <div className="sr" style={{ textAlign: "center", marginBottom: 56 }}>
-            <span className="chip-b" style={S.chip}>How It Works</span>
-            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, margin: "16px 0 12px" }}>
-              From Question to Signed Document in Minutes
-            </h2>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 32 }} className="steps-grid">
-            {HOW_STEPS.map((s, i) => (
-              <div key={s.n} className={`sr sr-d${i + 1}`} style={{ textAlign: "center" }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, margin: "0 auto 16px",
-                  background: "linear-gradient(135deg,#22c55e,#15803d)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Playfair Display',serif", fontSize: "1.1rem", fontWeight: 800, color: "#fff",
-                  boxShadow: "0 6px 20px var(--green-glow)" }}>
-                  {s.n}
-                </div>
-                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: "1.1rem", fontWeight: 700,
-                  marginBottom: 8, color: "var(--ls-text)" }}>
-                  {s.title}
-                </h3>
-                <p style={{ fontSize: ".84rem", color: "var(--ls-text2)", lineHeight: 1.6,
-                  fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  {s.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════ MODULES ══════════════════════ */}
-      <section id="modules" style={{ padding: "96px clamp(16px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <div className="sr" style={{ textAlign: "center", marginBottom: 48 }}>
-            <span className="chip-p" style={S.chip}>Core Modules</span>
-            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, margin: "16px 0 0" }}>
-              Three Powerful Tools in One
-            </h2>
-          </div>
-
-          {/* Tab bar */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 40, background: "var(--bg2)",
-            borderRadius: 16, padding: 6, border: "1px solid var(--ls-border)", width: "fit-content", margin: "0 auto 40px" }}>
-            {MODULE_TABS.map((tab, i) => (
-              <button key={tab} onClick={() => setActiveModule(i)}
-                style={{ padding: "10px 20px", borderRadius: 12, border: "none", cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, fontSize: ".875rem",
-                  transition: "all .25s",
-                  background: activeModule === i ? "linear-gradient(135deg,#22c55e,#15803d)" : "transparent",
-                  color: activeModule === i ? "#fff" : "var(--ls-text2)",
-                  boxShadow: activeModule === i ? "0 4px 16px var(--green-glow)" : "none" }}>
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Panel 0: Legal Resources */}
-          {activeModule === 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }} className="mod-grid">
-              {LAW_MODULES.map((m) => (
-                <div key={m.title} style={{ ...S.card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; e.currentTarget.style.transform = ""; }}>
-                  <div style={{ fontSize: "1.8rem", flexShrink: 0 }}>{m.icon}</div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: ".95rem", marginBottom: 4, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{m.title}</div>
-                    <span className={m.tag} style={S.chip}>{m.count}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Panel 1: AI Documents */}
-          {activeModule === 1 && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }} className="doc-grid">
-              <div>
-                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: "1.5rem", fontWeight: 800, marginBottom: 16 }}>
-                  AI-Powered Document Generation
-                </h3>
-                <p style={{ fontSize: ".9rem", color: "var(--ls-text2)", lineHeight: 1.7, marginBottom: 24, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  Select a template, fill in your details, and our AI generates a professionally worded, court-ready document in seconds. Available in both Bengali and English.
-                </p>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                  {["AI auto-fills legal clauses","Bengali & English output","PDF download ready","48+ document types"].map((f) => (
-                    <li key={f} style={{ display: "flex", alignItems: "center", gap: 10,
-                      fontSize: ".88rem", color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                      <span style={{ color: "var(--green)", fontWeight: 800 }}>✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <button onClick={(e) => { addRipple(e); navigate("/templates"); }}
-                  className="btn-shimmer"
-                  style={{ position: "relative", overflow: "hidden", marginTop: 28,
-                    padding: "12px 24px", borderRadius: 12, border: "none",
-                    background: "linear-gradient(135deg,#22c55e,#15803d)",
-                    color: "#fff", fontWeight: 700, cursor: "pointer",
-                    fontFamily: "'Plus Jakarta Sans',sans-serif",
-                    boxShadow: "0 4px 16px var(--green-glow)" }}>
-                  Browse Templates →
-                </button>
-              </div>
-              <div style={{ background: "var(--bg3)", borderRadius: 18, padding: 28,
-                border: "1px solid var(--ls-border)" }}>
-                <div style={{ fontWeight: 700, fontSize: ".9rem", marginBottom: 16,
-                  fontFamily: "'Plus Jakarta Sans',sans-serif", color: "var(--ls-text)" }}>
-                  📋 Document Preview
-                </div>
-                {["Rental Agreement","Employment Contract","Affidavit","Power of Attorney"].map((doc, i) => (
-                  <div key={doc} style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "10px 0", borderBottom: i < 3 ? "1px solid var(--ls-border)" : "none" }}>
-                    <span style={{ fontSize: ".85rem", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>📄 {doc}</span>
-                    <span className="chip-g" style={{ ...S.chip, fontSize: ".7rem" }}>AI Ready</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Panel 2: Analytics */}
-          {activeModule === 2 && (
-            <div style={{ ...S.card, padding: 32 }}>
-              <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: "1.4rem", fontWeight: 800, marginBottom: 24 }}>
-                Platform Analytics Overview
-              </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 32 }} className="analytics-mini-grid">
-                {[["📄","1,200","Users"],["⚖️","48","Templates"],["💬","25K","Queries"],["✅","97%","Accuracy"]].map(([ic,val,lbl]) => (
-                  <div key={lbl} style={{ background: "var(--bg3)", borderRadius: 14, padding: 20, textAlign: "center",
-                    border: "1px solid var(--ls-border)" }}>
-                    <div style={{ fontSize: "1.4rem", marginBottom: 6 }}>{ic}</div>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "1.6rem", fontWeight: 800, color: "var(--green)" }}>{val}</div>
-                    <div style={{ fontSize: ".78rem", color: "var(--ls-text3)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{lbl}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Simple bar chart */}
-              <div>
-                <div style={{ fontSize: ".84rem", fontWeight: 700, marginBottom: 14, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  Popular Template Categories
-                </div>
-                {[["Employment","85%"],["Property","72%"],["Commercial","60%"],["Family","48%"],["Criminal","35%"]].map(([cat,pct]) => (
-                  <div key={cat} style={{ marginBottom: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".8rem",
-                      marginBottom: 4, fontFamily: "'Plus Jakarta Sans',sans-serif", color: "var(--ls-text2)" }}>
-                      <span>{cat}</span><span style={{ fontWeight: 700, color: "var(--green)" }}>{pct}</span>
-                    </div>
-                    <div style={{ height: 7, background: "var(--g100)", borderRadius: 99, overflow: "hidden" }}>
-                      <div className="pop-fill-bar" style={{ height: "100%", width: pct,
-                        background: "linear-gradient(90deg,#22c55e,#15803d)", borderRadius: 99 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button onClick={() => navigate("/analytics-dashboard")}
-                style={{ marginTop: 24, padding: "10px 20px", borderRadius: 12, border: "1.5px solid var(--ls-border)",
-                  background: "transparent", color: "var(--ls-text)", fontWeight: 600, cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".875rem" }}>
-                View Full Dashboard →
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════ AI CHATBOT ══════════════════════ */}
-      <section id="chatbot-section" style={{ background: "var(--bg2)", padding: "96px clamp(16px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }} className="chat-demo-grid">
-          <div className="sr sr-left">
-            <span className="chip-g" style={S.chip}>AI Legal Assistant</span>
-            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 800, margin: "16px 0 12px" }}>
-              Ask Anything. Get Cited Answers.
-            </h2>
-            <p style={{ fontSize: ".9rem", color: "var(--ls-text2)", lineHeight: 1.7, marginBottom: 28, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-              Our AI is trained on Bangladesh's full legal corpus — Labour Act, Contract Act, Criminal Procedure Code, and more. Ask in Bengali or English.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
-              {["Understands Bengali + English questions","Cites specific sections and acts","Available 24/7, no lawyer needed","Free for all registered users"].map((f) => (
-                <div key={f} style={{ display: "flex", gap: 10, alignItems: "center",
-                  fontSize: ".88rem", fontFamily: "'Plus Jakarta Sans',sans-serif", color: "var(--ls-text2)" }}>
-                  <span style={{ color: "var(--green)", fontWeight: 800 }}>✓</span>{f}
-                </div>
-              ))}
-            </div>
-            <button onClick={(e) => { addRipple(e); navigate("/chat"); }}
-              className="btn-shimmer"
-              style={{ position: "relative", overflow: "hidden", padding: "12px 24px",
-                borderRadius: 12, border: "none",
-                background: "linear-gradient(135deg,#22c55e,#15803d)",
-                color: "#fff", fontWeight: 700, cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans',sans-serif",
-                boxShadow: "0 4px 16px var(--green-glow)" }}>
-              Start Chatting Free →
-            </button>
-          </div>
-
-          {/* Live chat demo */}
-          <div className="sr sr-right" style={{ background: "var(--ls-card)", borderRadius: 20,
-            border: "1px solid var(--ls-border)", overflow: "hidden",
-            boxShadow: "var(--shadow-lg)" }}>
-            <div style={{ background: "var(--bg3)", borderBottom: "1px solid var(--ls-border)",
-              padding: "12px 18px", display: "flex", alignItems: "center", gap: 10,
-              fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%",
-                background: "linear-gradient(135deg,#22c55e,#15803d)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: ".8rem", fontWeight: 800, color: "#fff" }}>
-                LS
-              </div>
-              <div>
-                <div style={{ fontSize: ".85rem", fontWeight: 700, color: "var(--ls-text)" }}>Legal Shathi AI</div>
-                <div style={{ fontSize: ".72rem", color: "var(--green)" }}>● Online</div>
-              </div>
-            </div>
-
-            <div style={{ padding: "20px 18px", minHeight: 200 }}>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                <div style={{ background: "linear-gradient(135deg,#22c55e,#15803d)", color: "#fff",
-                  borderRadius: "16px 16px 4px 16px", padding: "10px 14px",
-                  fontSize: ".8rem", maxWidth: "80%", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  {CHAT_QA[chatIdx].q}
-                </div>
-              </div>
-              {chatTyping ? (
-                <div style={{ display: "flex", gap: 4, padding: "12px 14px",
-                  background: "var(--bg3)", borderRadius: "4px 16px 16px 16px", width: "fit-content" }}>
-                  {[0,1,2].map(i => <span key={i} className="typing-dot" style={{ width:7,height:7,borderRadius:"50%",background:"var(--ls-text3)",display:"block" }} />)}
-                </div>
-              ) : (
-                <div style={{ background: "var(--bg3)", borderRadius: "4px 16px 16px 16px",
-                  padding: "10px 14px", fontSize: ".8rem", lineHeight: 1.6,
-                  color: "var(--ls-text)", maxWidth: "90%", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  {CHAT_QA[chatIdx].a}
-                </div>
-              )}
-            </div>
-
-            <div style={{ padding: "0 18px 18px", display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {["Labour rights","Property transfer","Contract law"].map((q) => (
-                <button key={q} onClick={askChat}
-                  style={{ padding: "5px 12px", borderRadius: 99, border: "1px solid var(--ls-border)",
-                    background: "var(--bg3)", fontSize: ".75rem", fontWeight: 600, cursor: "pointer",
-                    color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif",
-                    transition: "all .2s" }}
-                  onMouseEnter={e => { e.target.style.borderColor = "var(--green)"; e.target.style.color = "var(--green)"; }}
-                  onMouseLeave={e => { e.target.style.borderColor = "var(--ls-border)"; e.target.style.color = "var(--ls-text2)"; }}>
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════ TEMPLATES ══════════════════════ */}
-      <section id="templates-section" style={{ padding: "96px clamp(16px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <div className="sr" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 40, flexWrap: "wrap", gap: 16 }}>
-            <div>
-              <span className="chip-a" style={S.chip}>Document Templates</span>
-              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 800, margin: "12px 0 0" }}>
-                Ready-Made Legal Documents
-              </h2>
-            </div>
-            <button onClick={() => navigate("/templates")}
-              style={{ padding: "10px 20px", borderRadius: 12, border: "1.5px solid var(--ls-border)",
-                background: "transparent", color: "var(--ls-text)", fontWeight: 600, cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".875rem", flexShrink: 0 }}
-              onMouseEnter={e => { e.target.style.borderColor = "var(--green)"; e.target.style.color = "var(--green)"; }}
-              onMouseLeave={e => { e.target.style.borderColor = "var(--ls-border)"; e.target.style.color = "var(--ls-text)"; }}>
-              View All Templates →
-            </button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }} className="templates-grid">
-            {(templates.length > 0 ? templates : Array(8).fill(null)).map((t, i) => (
-              t ? (
-                <div key={t._id} className={`sr sr-d${Math.min(i + 1, 4)}`}
-                  style={{ ...S.card, cursor: "pointer" }}
-                  onClick={() => navigate(`/template/${t._id}`)}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; e.currentTarget.style.transform = ""; }}>
-                  <div style={{ fontSize: "1.8rem", marginBottom: 10 }}>
-                    {TEMPLATE_ICONS[t.category] || TEMPLATE_ICONS.Default}
-                  </div>
-                  <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: "1rem", fontWeight: 700, marginBottom: 6, color: "var(--ls-text)" }}>{t.title}</h3>
-                  <p style={{ fontSize: ".8rem", color: "var(--ls-text2)", lineHeight: 1.55, marginBottom: 14, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                    {t.description?.slice(0, 80)}…
-                  </p>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span className="chip-g" style={S.chip}>{t.category || "Legal"}</span>
-                    <button onClick={(e) => { e.stopPropagation(); toggleFav(t._id); }}
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem",
-                        transition: "transform .2s" }}
-                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.3)"}
-                      onMouseLeave={e => e.currentTarget.style.transform = ""}>
-                      {favorites.has(t._id) ? "❤️" : "🤍"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div key={i} style={{ height: 180, borderRadius: "var(--r)", background: "var(--bg3)",
-                  animation: "pulse 1.5s ease-in-out infinite", border: "1px solid var(--ls-border)" }} />
-              )
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════ E-SIGNATURE ══════════════════════ */}
-      <section id="esig" style={{ background: "var(--bg2)", padding: "96px clamp(16px,5vw,80px)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }} className="esig-grid">
-          <div className="sr sr-right" style={{ order: 1 }}>
-            <span className="chip-p" style={S.chip}>E-Signature</span>
-            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 800, margin: "16px 0 12px" }}>
-              Sign Documents Digitally — Legally Valid in Bangladesh
-            </h2>
-            <p style={{ fontSize: ".9rem", color: "var(--ls-text2)", lineHeight: 1.7, marginBottom: 28, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-              Our e-signature system is compliant with Bangladesh's ICT Act 2006. Sign, witness, and timestamp your legal documents in minutes.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
-              {["Draw or type your signature","Witness signature support","Timestamped audit trail","Download signed PDF"].map((f) => (
-                <div key={f} style={{ display: "flex", gap: 10, alignItems: "center",
-                  fontSize: ".88rem", fontFamily: "'Plus Jakarta Sans',sans-serif", color: "var(--ls-text2)" }}>
-                  <span style={{ color: "var(--green)", fontWeight: 800 }}>✓</span>{f}
-                </div>
-              ))}
-            </div>
-            <button onClick={(e) => { addRipple(e); navigate("/esignature"); }}
-              className="btn-shimmer"
-              style={{ position: "relative", overflow: "hidden", padding: "12px 24px",
-                borderRadius: 12, border: "none",
-                background: "linear-gradient(135deg,#22c55e,#15803d)",
-                color: "#fff", fontWeight: 700, cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans',sans-serif",
-                boxShadow: "0 4px 16px var(--green-glow)" }}>
-              Try E-Signature →
-            </button>
-          </div>
-
-          {/* Signature mockup */}
-          <div className="sr sr-left" style={{ background: "var(--ls-card)", borderRadius: 20,
-            border: "1px solid var(--ls-border)", padding: 28, boxShadow: "var(--shadow-lg)" }}>
-            <div style={{ fontWeight: 700, fontSize: ".9rem", marginBottom: 20,
-              fontFamily: "'Plus Jakarta Sans',sans-serif" }}>✍️ Digital Signature</div>
-            <div style={{ background: "var(--bg3)", borderRadius: 12, height: 100,
-              border: "2px dashed var(--ls-border)", display: "flex", alignItems: "center",
-              justifyContent: "center", marginBottom: 20, color: "var(--ls-text3)",
-              fontSize: ".85rem", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-              Signature Canvas
-            </div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-              {["Draw","Type","Upload"].map((m, i) => (
-                <button key={m}
-                  style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "1px solid var(--ls-border)",
-                    background: i === 0 ? "var(--g50)" : "transparent",
-                    color: i === 0 ? "var(--green)" : "var(--ls-text2)",
-                    fontWeight: i === 0 ? 700 : 500, fontSize: ".8rem", cursor: "pointer",
-                    fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  {m}
-                </button>
-              ))}
-            </div>
-            <div style={{ borderTop: "1px solid var(--ls-border)", paddingTop: 16 }}>
-              {["Signatory: ____________","Witness: ____________","Date: " + new Date().toLocaleDateString("en-BD")].map((l) => (
-                <div key={l} style={{ fontSize: ".8rem", color: "var(--ls-text2)", marginBottom: 8,
-                  fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{l}</div>
-              ))}
-            </div>
-            <button style={{ width: "100%", padding: "10px", borderRadius: 12, border: "none",
-              background: "linear-gradient(135deg,#22c55e,#15803d)", color: "#fff",
-              fontWeight: 700, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif",
-              marginTop: 12, boxShadow: "0 4px 12px var(--green-glow)" }}>
-              Apply Signature & Download PDF
-            </button>
           </div>
         </div>
       </section>
@@ -822,7 +384,7 @@ const Index = () => {
             </h2>
             <p style={{ fontSize: "1rem", color: "rgba(255,255,255,.8)", maxWidth: 480, margin: "0 auto 36px",
               lineHeight: 1.7, fontFamily: "'Plus Jakarta Sans',sans-serif", position: "relative" }}>
-              Join 1,200+ Bangladeshis who use Legal Shathi for their legal needs. Free forever for basic access.
+              Your one-stop solution for reliable, automated legal documents. Start creating, editing, and signing today.
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", position: "relative" }}>
               <button onClick={(e) => { addRipple(e); navigate("/register"); }}
@@ -835,7 +397,7 @@ const Index = () => {
                   transition: "transform .25s cubic-bezier(.34,1.56,.64,1)" }}
                 onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"}
                 onMouseLeave={e => e.currentTarget.style.transform = ""}>
-                Create Free Account →
+                Create Account →
               </button>
               <button onClick={() => navigate("/chat")}
                 style={{ padding: "14px 32px", borderRadius: 14, border: "2px solid rgba(255,255,255,.3)",

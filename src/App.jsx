@@ -13,7 +13,9 @@ import TemplateDetail from "./pages/TemplateDetail";
 import AiChatbot from "./components/AiChatbot";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import Templates from "./pages/Templates";
-
+import Features from "./pages/Features";
+import LegalResources from "./pages/LegalResources";
+import ESignature from "./pages/ESignature";
 const queryClient = new QueryClient();
 
 const FloatingChatbot = () => {
@@ -28,6 +30,9 @@ const AppRoutes = () => (
     <FloatingChatbot />
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/features" element={<Features />} />
+      <Route path="/legal-resources" element={<LegalResources />} />
+      <Route path="/esignature" element={<ESignature />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

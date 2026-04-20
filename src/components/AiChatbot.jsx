@@ -17,7 +17,7 @@ const ChatMessage = ({ message }) => {
     <div className={cn("flex gap-3 mb-4", isUser ? "flex-row-reverse" : "flex-row")}>
       <div className={cn(
         "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-        isUser ? "bg-primary" : "bg-gradient-to-br from-violet-500 to-blue-600"
+        isUser ? "bg-primary" : "bg-gradient-to-br from-green-500 to-emerald-600"
       )}>
         {isUser
           ? <User className="h-4 w-4 text-white" />
@@ -38,7 +38,7 @@ const ChatMessage = ({ message }) => {
 
 const TypingIndicator = () => (
   <div className="flex gap-3 mb-4">
-    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-500 to-blue-600">
+    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600">
       <Bot className="h-4 w-4 text-white" />
     </div>
     <div className="bg-secondary border border-border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1">
@@ -138,7 +138,7 @@ const AiChatbot = () => {
           )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-violet-600 flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-700 flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                 <Sparkles className="h-4 w-4 text-white" />
@@ -224,8 +224,10 @@ const AiChatbot = () => {
                 }
               </button>
             </div>
-            <p className="text-xs text-muted-foreground/60 mt-1.5 text-center">
+            <p className="text-[10px] text-muted-foreground/60 mt-1.5 text-center px-2 leading-tight">
               AI Shathi · Powered by OpenAI
+              <br />
+              <span className="text-amber-500/80">Ai may not fully be correct. Verify important info.</span>
             </p>
           </div>
         </div>
@@ -236,8 +238,8 @@ const AiChatbot = () => {
         id="ai-chatbot-toggle"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed bottom-6 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-2xl shadow-blue-500/30 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95",
-          "bg-gradient-to-br from-blue-500 to-violet-600",
+          "fixed bottom-6 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-2xl shadow-green-500/30 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95",
+          "bg-gradient-to-br from-green-500 to-emerald-600",
           isOpen && "rotate-90"
         )}
         aria-label="Open AI Chat"

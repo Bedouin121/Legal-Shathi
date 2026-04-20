@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Scale } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ProfileDropdown from "@/components/ProfileDropdown";
@@ -31,22 +32,17 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const scrollTo = (id) => {
+  const scrollTo = (path) => {
     setMenuOpen(false);
-    if (location.pathname !== "/") {
-      navigate("/");
-      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
-    } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    navigate(path);
   };
 
   const navLinks = [
-    { label: "Features", id: "features" },
-    { label: "Modules", id: "modules" },
-    { label: "AI Chat", id: "chatbot-section" },
-    { label: "Templates", id: "templates-section" },
-    { label: "E-Signature", id: "esig" },
+    { label: "Features", path: "/features" },
+    { label: "Legal Resources", path: "/legal-resources" },
+    { label: "Templates", path: "/templates" },
+    { label: "AI Chat", path: "/chat" },
+    { label: "E-Signature", path: "/esignature" },
   ];
 
   return (
@@ -81,26 +77,24 @@ const Navbar = () => {
               width: 38, height: 38, borderRadius: 11,
               background: "linear-gradient(135deg,#22c55e,#15803d)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: ".9rem", fontWeight: 800, color: "#fff",
               boxShadow: "0 4px 14px var(--green-glow)",
               transition: "transform .3s, box-shadow .3s",
               flexShrink: 0,
             }}
             className="logo-mark"
           >
-            LS
+            <Scale style={{ color: "#fff", width: 22, height: 22 }} />
           </div>
           Legal Shathi
         </a>
 
         {/* Desktop nav links */}
-        {isLanding && (
-          <ul style={{ listStyle: "none", display: "flex", alignItems: "center", gap: 2, margin: 0, padding: 0 }}
-              className="hidden md:flex">
+        <ul style={{ listStyle: "none", display: "flex", alignItems: "center", gap: 2, margin: 0, padding: 0 }}
+            className="hidden md:flex">
             {navLinks.map((l) => (
-              <li key={l.id}>
+              <li key={l.label}>
                 <button
-                  onClick={() => scrollTo(l.id)}
+                  onClick={() => scrollTo(l.path)}
                   style={{
                     padding: "8px 14px", borderRadius: 10, border: "none", background: "transparent",
                     fontSize: ".875rem", fontWeight: 600, color: "var(--ls-text2)",
@@ -114,7 +108,6 @@ const Navbar = () => {
               </li>
             ))}
           </ul>
-        )}
 
         {/* Right side */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -200,8 +193,8 @@ const Navbar = () => {
         >
           {navLinks.map((l) => (
             <button
-              key={l.id}
-              onClick={() => scrollTo(l.id)}
+              key={l.label}
+              onClick={() => scrollTo(l.path)}
               style={{
                 padding: "14px 18px", borderRadius: 12, border: "none",
                 background: "transparent", textAlign: "left",
@@ -229,7 +222,7 @@ const Navbar = () => {
                   background:"linear-gradient(135deg,#22c55e,#15803d)",
                   color:"#fff",fontWeight:700,fontSize:"1rem",cursor:"pointer",
                   fontFamily:"'Plus Jakarta Sans',sans-serif",marginTop:8 }}>
-                Get Started Free →
+                Get Started →
               </button>
             </>
           )}

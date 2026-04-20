@@ -241,3 +241,4 @@
 @media(max-width:768px) {
   .bottom-nav { display: grid; }
 }
+@media (max-width: 768px) { .hero-grid { grid-template-columns: 1fr !important; text-align: left !important; } .hero-grid > div { max-width: 100% !important; } }

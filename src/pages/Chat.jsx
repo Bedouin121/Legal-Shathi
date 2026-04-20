@@ -29,7 +29,7 @@ const ChatMessage = ({ message }) => {
     <div className={cn("flex gap-3 sm:gap-4 mb-6 group", isUser ? "flex-row-reverse" : "flex-row")}>
       <div className={cn(
         "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center shadow-lg",
-        isUser ? "bg-primary" : "bg-gradient-to-br from-violet-500 to-blue-600"
+        isUser ? "bg-primary" : "bg-gradient-to-br from-green-500 to-emerald-600"
       )}>
         {isUser
           ? <User className="h-4 w-4 text-white" />
@@ -64,7 +64,7 @@ const ChatMessage = ({ message }) => {
 
 const TypingIndicator = () => (
   <div className="flex gap-3 sm:gap-4 mb-6">
-    <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-violet-500 to-blue-600 shadow-lg">
+    <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
       <Bot className="h-5 w-5 text-white" />
     </div>
     <div className="flex flex-col">
@@ -164,7 +164,7 @@ const Chat = () => {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -280,8 +280,8 @@ const Chat = () => {
                   }
                 </button>
               </div>
-              <p className="text-center text-xs text-muted-foreground/50 mt-2">
-                AI Shathi can make mistakes. Verify important legal information with a licensed lawyer.
+              <p className="text-center text-xs text-amber-600/80 mt-2">
+                Ai may not fully be correct. Verify important legal information with a licensed lawyer.
               </p>
             </div>
           </div>
