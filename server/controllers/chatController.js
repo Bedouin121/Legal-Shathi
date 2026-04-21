@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import ChatHistory from "../models/ChatHistory.js";
+import { logActivity } from "../utils/logActivity.js";
 
 const SYSTEM_PROMPT = `You are "AI Shathi", an expert AI legal assistant for the Legal Shathi platform in Bangladesh.
 Your role is to help users:
@@ -137,6 +138,8 @@ export const sendMessageStream = async (req, res) => {
     // Save to DB after stream completes
     chat.messages.push({ role: "assistant", content: fullReply });
     await chat.save();
+
+    logActivity(req.user._id, "chat_sent", { chatId: chat._id, preview: message.slice(0, 60) });
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();

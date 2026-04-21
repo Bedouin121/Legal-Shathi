@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { User, Upload, X, Loader2, Trash2 } from "lucide-react";
+import { User, Upload, X, Loader2, Trash2, Clock, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authAPI } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const ProfileDropdown = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
@@ -213,6 +215,23 @@ const ProfileDropdown = () => {
                   {user?.email}
                 </p>
               </div>
+
+              <div className="pt-2 border-t border-border flex flex-col gap-1">
+                <button
+                  onClick={() => { setIsOpen(false); navigate("/activity"); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-foreground hover:bg-secondary rounded-lg transition-colors text-left"
+                >
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Activity Timeline
+                </button>
+                <button
+                  onClick={() => { logout(); setIsOpen(false); navigate("/"); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-left"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+                </div>
             </div>
           </div>
         )}

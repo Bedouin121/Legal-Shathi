@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import { logActivity } from "../utils/logActivity.js";
 
 // @desc    Get user's favorites
 // @route   GET /api/favorites
@@ -25,6 +26,8 @@ export const addFavorite = async (req, res, next) => {
     user.favorites.push(templateId);
     await user.save();
 
+    logActivity(req.user._id, "favorite_added", { templateId });
+
     res.json({ message: "Added to favorites", favorites: user.favorites });
   } catch (error) {
     next(error);
@@ -42,6 +45,8 @@ export const removeFavorite = async (req, res, next) => {
       (fav) => fav.toString() !== templateId
     );
     await user.save();
+
+    logActivity(req.user._id, "favorite_removed", { templateId });
 
     res.json({ message: "Removed from favorites", favorites: user.favorites });
   } catch (error) {

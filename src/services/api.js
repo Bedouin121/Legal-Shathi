@@ -174,7 +174,18 @@ export const analyticsAPI = {
   get: () => apiFetch("/analytics"),
 };
 
-// ==================== Documents ====================
+// ==================== Activity ====================
+export const activityAPI = {
+  get: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return apiFetch(`/activity${query ? `?${query}` : ""}`);
+  },
+
+  exportUrl: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return `${API_BASE}/activity/export${query ? `?${query}` : ""}`;
+  },
+};
 export const documentAPI = {
   getFields: (templateTitle) =>
     apiFetch(`/documents/fields/${encodeURIComponent(templateTitle)}`),

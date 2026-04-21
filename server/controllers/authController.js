@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { logActivity } from "../utils/logActivity.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -21,6 +22,8 @@ export const register = async (req, res, next) => {
     }
 
     const user = await User.create({ name, email, password });
+
+    logActivity(user._id, "register", { name: user.name });
 
     res.status(201).json({
       _id: user._id,
@@ -55,6 +58,8 @@ export const login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
+
+    logActivity(user._id, "login");
 
     res.json({
       _id: user._id,
@@ -123,6 +128,8 @@ export const uploadProfilePicture = async (req, res, next) => {
         req.user.profilePicture = result.secure_url;
         req.user.profilePicturePublicId = result.public_id;
         await req.user.save();
+
+        logActivity(req.user._id, "profile_picture_uploaded");
 
         res.json({
           _id: req.user._id,

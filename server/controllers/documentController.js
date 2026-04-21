@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import Template from "../models/Template.js";
+import { logActivity } from "../utils/logActivity.js";
 
 let openai = null;
 const getOpenAI = () => {
@@ -78,6 +79,10 @@ export const generateDocument = async (req, res, next) => {
 
     const document = completion.choices[0].message.content;
 
+    if (req.user) {
+      logActivity(req.user._id, "document_generated", { templateTitle, language });
+    }
+
     res.json({
       document,
       templateTitle,
@@ -130,6 +135,10 @@ export const generateDocumentStream = async (req, res) => {
       if (content) {
         res.write(`data: ${JSON.stringify({ content })}\n\n`);
       }
+    }
+
+    if (req.user) {
+      logActivity(req.user._id, "document_generated", { templateTitle, language });
     }
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
