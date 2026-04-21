@@ -13,6 +13,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
+import analysisRoutes from "./routes/analysisRoutes.js";
 // Load env vars
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/activity", activityRoutes);
+app.use("/api/analysis", analysisRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

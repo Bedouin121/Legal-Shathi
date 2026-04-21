@@ -43,6 +43,7 @@ const Navbar = () => {
     { label: "Templates", path: "/templates" },
     { label: "AI Chat", path: "/chat" },
     { label: "E-Signature", path: "/esignature" },
+    { label: "AI Analysis", path: "/analyze" },
   ];
 
   return (

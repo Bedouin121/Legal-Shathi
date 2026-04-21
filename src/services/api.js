@@ -186,6 +186,27 @@ export const activityAPI = {
     return `${API_BASE}/activity/export${query ? `?${query}` : ""}`;
   },
 };
+
+// ==================== Analysis ====================
+export const analysisAPI = {
+  analyzeDocument: async (file) => {
+    const formData = new FormData();
+    formData.append("document", file);
+    
+    const res = await fetch(`${API_BASE}/analysis`, {
+      method: "POST",
+      body: formData, // fetch automatically sets the correct Content-Type for FormData
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to analyze document");
+    }
+    return data;
+  },
+};
+
+// ==================== Documents ====================
 export const documentAPI = {
   getFields: (templateTitle) =>
     apiFetch(`/documents/fields/${encodeURIComponent(templateTitle)}`),

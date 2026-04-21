@@ -16,6 +16,7 @@ import Templates from "./pages/Templates";
 import Features from "./pages/Features";
 import LegalResources from "./pages/LegalResources";
 import ESignature from "./pages/ESignature";
+import DocumentAnalysis from "./pages/DocumentAnalysis";
 import ActivityTimeline from "./pages/ActivityTimeline";
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const AppRoutes = () => (
       <Route path="/register" element={<Register />} />
       <Route path="/template/:id" element={<TemplateDetail />} />
       <Route path="/templates" element={<Templates />} />
+      <Route path="/analyze" element={<DocumentAnalysis />} />
       <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
       <Route path="/activity" element={<ActivityTimeline />} />
       <Route path="*" element={<NotFound />} />
