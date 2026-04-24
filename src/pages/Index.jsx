@@ -310,6 +310,20 @@ const Index = () => {
 
             <div className="sr sr-d3" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
               <button
+                onClick={(e) => { addRipple(e); navigate("/find-lawyer"); }}
+                className="btn-shimmer"
+                style={{ position: "relative", overflow: "hidden", padding: "14px 28px",
+                   borderRadius: 14, border: "2px solid var(--green)",
+                   background: "transparent",
+                   color: "var(--green)", fontWeight: 700, fontSize: "1rem", cursor: "pointer",
+                   fontFamily: "'Plus Jakarta Sans',sans-serif",
+                   transition: "transform .25s cubic-bezier(.34,1.56,.64,1), background .25s",
+                   display: "flex", alignItems: "center", gap: 8 }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.background = "var(--green-glow)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.background = "transparent"; }}>
+                Find My Lawyer
+              </button>
+              <button
                 onClick={(e) => { addRipple(e); navigate("/register"); }}
                 className="btn-shimmer"
                 style={{ position: "relative", overflow: "hidden", padding: "14px 28px",
