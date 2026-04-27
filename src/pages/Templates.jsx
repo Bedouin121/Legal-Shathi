@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { Search, CheckSquare, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import Navbar from "@/components/Navbar";
 import CategorySidebar from "@/components/CategorySidebar";
 import FilterTabs from "@/components/FilterTabs";
@@ -23,6 +25,11 @@ const Templates = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState(new Set());
+  
+  // Bulk Action State
+  const [selectedTemplates, setSelectedTemplates] = useState(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -67,6 +74,20 @@ const Templates = () => {
   const handleTabChange = (tab) => { setActiveTab(tab); setCurrentPage(1); };
   const handleSearchChange = (q) => { setSearchQuery(q); setCurrentPage(1); };
 
+  const toggleSelect = (id) => {
+    setSelectedTemplates((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+
+  const handleBulkGenerate = () => {
+    if (selectedTemplates.size === 0) return;
+    const selectedIds = Array.from(selectedTemplates);
+    navigate(`/bulk-template?ids=${selectedIds.join(",")}`);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar searchQuery={searchQuery} onSearchChange={handleSearchChange} />
@@ -91,7 +112,24 @@ const Templates = () => {
               <h1 className="font-display text-2xl font-bold text-foreground">Legal Templates</h1>
               <p className="mt-1 text-sm text-muted-foreground">{total} templates available</p>
             </div>
-            <FilterTabs activeTab={activeTab} onTabChange={handleTabChange} />
+            <div className="flex items-center gap-4">
+              <FilterTabs activeTab={activeTab} onTabChange={handleTabChange} />
+              <button
+                onClick={() => {
+                  setSelectionMode(!selectionMode);
+                  if (selectionMode) setSelectedTemplates(new Set());
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                  selectionMode 
+                    ? "border-primary bg-primary/10 text-primary" 
+                    : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                <CheckSquare className="h-4 w-4" />
+                Select
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -108,6 +146,9 @@ const Templates = () => {
                   template={template}
                   isFavorited={favorites.has(template._id)}
                   onToggleFavorite={toggleFavorite}
+                  isSelected={selectedTemplates.has(template._id)}
+                  onToggleSelect={toggleSelect}
+                  selectionMode={selectionMode}
                 />
               ))}
             </div>
@@ -125,6 +166,36 @@ const Templates = () => {
       </div>
 
       <Footer />
+
+      {/* Floating Bulk Action Bar */}
+      {(selectionMode || selectedTemplates.size > 0) && (
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-full border border-border bg-card/90 px-4 py-3 shadow-2xl shadow-primary/10 backdrop-blur-md animate-fade-in sm:px-6">
+          <div className="flex items-center gap-2 pr-4 border-r border-border">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+              {selectedTemplates.size}
+            </div>
+            <span className="text-sm font-medium text-foreground">Selected</span>
+          </div>
+          
+          <button
+            onClick={handleBulkGenerate}
+            disabled={selectedTemplates.size === 0}
+            className="rounded-full bg-primary px-6 py-2 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Generate Documents
+          </button>
+          
+          <button
+            onClick={() => {
+              setSelectionMode(false);
+              setSelectedTemplates(new Set());
+            }}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -12,13 +12,27 @@ const categoryColors = {
   Employment: "bg-category-employment/20 text-category-employment",
 };
 
-const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
+const TemplateCard = ({ template, isFavorited, onToggleFavorite, isSelected, onToggleSelect, selectionMode = false }) => {
   const colorClass = categoryColors[template.category];
   const templateId = template._id || template.id;
   const navigate = useNavigate();
 
   return (
-    <div className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 animate-fade-in">
+    <div 
+      className={cn(
+        "group relative flex flex-col rounded-xl border bg-card p-5 transition-all hover:shadow-lg animate-fade-in",
+        isSelected 
+          ? "border-primary ring-1 ring-primary shadow-primary/10" 
+          : "border-border hover:border-primary/30 hover:shadow-primary/5"
+      )}
+    >
+      {/* Selection Overlay for entire card if in selection mode */}
+      {(selectionMode || isSelected) && (
+        <div 
+          className="absolute inset-0 z-10 cursor-pointer rounded-xl"
+          onClick={() => onToggleSelect && onToggleSelect(templateId)}
+        />
+      )}
       {/* Top row */}
       <div className="mb-3 flex items-start justify-between">
         <Badge
@@ -27,6 +41,28 @@ const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
         >
           {template.category}
         </Badge>
+        
+        <div className="flex items-center gap-3 z-20 relative">
+          {(selectionMode || isSelected) && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelect && onToggleSelect(templateId);
+              }}
+              className={cn(
+                "flex h-5 w-5 cursor-pointer items-center justify-center rounded border transition-colors",
+                isSelected 
+                  ? "bg-primary border-primary text-primary-foreground" 
+                  : "border-muted-foreground/30 hover:border-primary"
+              )}
+            >
+              {isSelected && (
+                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                 </svg>
+              )}
+            </div>
+          )}
         <button
           onClick={() => onToggleFavorite(templateId)}
           className="text-muted-foreground transition-colors hover:text-destructive"
@@ -35,6 +71,7 @@ const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
             className={cn("h-4 w-4", isFavorited && "fill-destructive text-destructive")}
           />
         </button>
+        </div>
       </div>
 
       {/* Title */}
@@ -65,14 +102,16 @@ const TemplateCard = ({ template, isFavorited, onToggleFavorite }) => {
       </div>
 
       {/* CTA */}
-      <Button
-        variant="ghost"
-        className="w-full justify-between border border-border text-sm text-primary hover:bg-primary/10 hover:text-primary"
-        onClick={() => navigate(`/template/${templateId}`)}
-      >
-        View Template
-        <ArrowRight className="h-4 w-4" />
-      </Button>
+      <div className="relative z-20 mt-auto">
+        <Button
+          variant="ghost"
+          className="w-full justify-between border border-border text-sm text-primary hover:bg-primary/10 hover:text-primary"
+          onClick={() => navigate(`/template/${templateId}`)}
+        >
+          View Template
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };

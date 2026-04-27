@@ -19,12 +19,13 @@ import ESignature from "./pages/ESignature";
 import DocumentAnalysis from "./pages/DocumentAnalysis";
 import ActivityTimeline from "./pages/ActivityTimeline";
 import FindLawyer from "./pages/FindLawyer";
+import TemplateBulkDetail from "./pages/TemplateBulkDetail";
 
 const queryClient = new QueryClient();
 
 const FloatingChatbot = () => {
   const location = useLocation();
-  const hidePaths = ["/chat", "/login", "/register"];
+  const hidePaths = ["/chat", "/login", "/register", "/bulk-template"];
   if (hidePaths.includes(location.pathname) || location.pathname.startsWith("/template/")) return null;
   return <AiChatbot />;
 };
@@ -41,6 +42,7 @@ const AppRoutes = () => (
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/template/:id" element={<TemplateDetail />} />
+      <Route path="/bulk-template" element={<TemplateBulkDetail />} />
       <Route path="/templates" element={<Templates />} />
       <Route path="/analyze" element={<DocumentAnalysis />} />
       <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
