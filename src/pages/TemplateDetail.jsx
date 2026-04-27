@@ -141,15 +141,47 @@ const TemplateDetail = () => {
       
       setFormData((prev) => {
         const updated = { ...prev };
-        // Smartly map extracted data to the first matching empty fields
+        
+        // 1. Identify which party this NID belongs to (e.g., 'seller' vs 'buyer')
+        // We look for the first empty 'Name' field to set our target prefix.
+        const getPrefix = (fName) => {
+          const match = fName.match(/^([a-z]+[0-9]*)/i);
+          return match ? match[1].toLowerCase() : "";
+        };
+        const allPrefixes = [...new Set(fields.map(f => getPrefix(f.name)))];
+        
+        let targetPrefix = null;
+        for (const prefix of allPrefixes) {
+          const nameField = fields.find(f => f.name.toLowerCase() === `${prefix}name`);
+          if (nameField && !updated[nameField.name]) {
+            targetPrefix = prefix;
+            break;
+          }
+        }
+
+        // 2. Map data only to the targeted prefix
         fields.forEach((field) => {
           const key = field.name.toLowerCase();
+          const label = field.label.toLowerCase();
+          
+          // Skip if this field belongs to another party
+          const fieldPrefix = getPrefix(field.name);
+          if (targetPrefix && fieldPrefix !== targetPrefix && allPrefixes.includes(fieldPrefix) && fieldPrefix !== "address" && fieldPrefix !== "date") {
+             return;
+          }
+
           if (!updated[field.name]) {
-            if (key.includes("nid") && extracted.nidNumber) updated[field.name] = extracted.nidNumber;
-            else if (key.includes("address") && extracted.address) updated[field.name] = extracted.address;
-            else if (key.includes("father") && extracted.fatherName) updated[field.name] = extracted.fatherName;
-            else if (key.includes("name") && !key.includes("father") && !key.includes("mother") && !key.includes("company") && !key.includes("business") && extracted.name) {
-              updated[field.name] = extracted.name;
+            if (key.includes("nid") && extracted.nidNumber) {
+              updated[field.name] = extracted.nidNumber;
+            } else if (key.includes("address") && extracted.address) {
+              updated[field.name] = extracted.address;
+            } else if (key.includes("father") && extracted.fatherName) {
+              updated[field.name] = extracted.fatherName;
+            } else if (key.includes("name") && !key.includes("father") && !key.includes("mother") && !key.includes("company") && !key.includes("business")) {
+              // Prefer Bengali name if the label asks for it
+              const wantsBengali = label.includes("বাংলা") || label.includes("bengali");
+              const nameValue = wantsBengali ? extracted.nameBengali : (extracted.nameEnglish || extracted.nameBengali);
+              if (nameValue) updated[field.name] = nameValue;
             }
           }
         });

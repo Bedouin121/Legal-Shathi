@@ -174,12 +174,12 @@ export const extractNID = async (req, res, next) => {
       messages: [
         {
           role: "system",
-          content: "You are a Bangladeshi document extraction AI. Extract the following fields from the provided ID card: Name (English), Name (Bengali), Father's Name (English/Bengali), Mother's Name, Date of Birth, NID Number, and Address. Return ONLY a pure JSON object mapping these exact keys: 'name', 'fatherName', 'motherName', 'dob', 'nidNumber', 'address'. If a field is missing, set its value to an empty string. Do NOT use markdown code blocks or backticks. Return raw JSON only.",
+          content: "You are a precise OCR AI for Bangladeshi National ID cards. Pay extreme attention to accurately reading Bengali characters without guessing. Extract these fields: nameBengali (exact Bengali name), nameEnglish (exact English name), fatherName (Bengali or English as written), motherName, dob, nidNumber, address (exactly as written). Return ONLY a pure JSON object mapping these exact keys: 'nameBengali', 'nameEnglish', 'fatherName', 'motherName', 'dob', 'nidNumber', 'address'. If a field is missing or unreadable, set it to an empty string. Do NOT use markdown code blocks or backticks. Return raw JSON only.",
         },
         {
           role: "user",
           content: [
-            { type: "text", text: "Extract details from this NID card." },
+            { type: "text", text: "Extract details from this NID card accurately." },
             { type: "image_url", image_url: { url: dataURI } },
           ],
         },
