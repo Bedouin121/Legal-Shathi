@@ -269,3 +269,46 @@
 .leaflet-top,
 .leaflet-bottom { z-index: 1 !important; }
 .leaflet-control { z-index: 2 !important; }
+
+/* ===================== MOBILE GLOBAL FIXES ===================== */
+/* Give all pages bottom breathing room so content isn't hidden behind the fixed bottom nav */
+@media (max-width: 768px) {
+  /* Pages using flex-col layout */
+  .min-h-screen.flex.flex-col > main,
+  .min-h-screen.flex.flex-col > .flex-1 {
+    padding-bottom: 80px;
+  }
+
+  /* Generic page wrapper bottom safe area */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Container max-width safety on small phones */
+  .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* Prevent any element from breaking horizontal layout */
+  img, video, iframe, table {
+    max-width: 100%;
+  }
+
+  /* Hamburger area — give icon gap if top nav is visible on some widths */
+  nav .hidden { display: none !important; }
+  nav .md\:flex { display: none !important; }
+}
+
+@media (min-width: 768px) {
+  nav .md\:flex { display: flex !important; }
+  .md\:hidden { display: none !important; }
+}
+
+/* BackToTop button — push up above bottom nav on mobile */
+@media (max-width: 768px) {
+  .back-to-top-btn {
+    bottom: 76px !important;
+  }
+}
+

@@ -67,7 +67,7 @@ const DocumentAnalysis = () => {
     <div className="min-h-screen bg-[var(--bg)] flex flex-col font-sans">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-24 sm:px-6 max-w-5xl">
+      <main className="flex-1 container mx-auto px-4 py-20 sm:px-6 max-w-5xl pb-24 md:pb-16">
         <div className="text-center mb-12 sr sr-up in">
           <span className="chip-p inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wider mb-4">
             AI POWERED

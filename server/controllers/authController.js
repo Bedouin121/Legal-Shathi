@@ -101,65 +101,35 @@ export const uploadProfilePicture = async (req, res, next) => {
       return res.status(400).json({ message: "Please upload an image" });
     }
 
-    const cloudinary = (await import("../config/cloudinary.js")).default;
-    const streamifier = (await import("streamifier")).default;
+    // Convert buffer to base64 data URI
+    const base64Data = req.file.buffer.toString("base64");
+    const dataUri = `data:${req.file.mimetype};base64,${base64Data}`;
 
-    // Delete old profile picture if exists
-    if (req.user.profilePicturePublicId) {
-      await cloudinary.uploader.destroy(req.user.profilePicturePublicId);
-    }
+    // Update user with new profile picture
+    req.user.profilePicture = dataUri;
+    req.user.profilePicturePublicId = null; // No public ID needed for base64
+    await req.user.save();
 
-    // Upload to Cloudinary with optimization
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: "legal-shathi/profile-pictures",
-        transformation: [
-          { width: 400, height: 400, crop: "fill", gravity: "face" },
-          { quality: "auto:good" },
-          { fetch_format: "auto" },
-        ],
-      },
-      async (error, result) => {
-        if (error) {
-          return res.status(500).json({ message: "Image upload failed" });
-        }
+    logActivity(req.user._id, "profile_picture_uploaded");
 
-        // Update user with new profile picture
-        req.user.profilePicture = result.secure_url;
-        req.user.profilePicturePublicId = result.public_id;
-        await req.user.save();
-
-        logActivity(req.user._id, "profile_picture_uploaded");
-
-        res.json({
-          _id: req.user._id,
-          name: req.user.name,
-          email: req.user.email,
-          role: req.user.role,
-          profilePicture: req.user.profilePicture,
-          favorites: req.user.favorites,
-        });
-      }
-    );
-
-    streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+    res.json({
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+      profilePicture: req.user.profilePicture,
+      favorites: req.user.favorites,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Delete profile picture
-// @route   DELETE /api/auth/profile-picture
 export const deleteProfilePicture = async (req, res, next) => {
   try {
-    if (!req.user.profilePicturePublicId) {
+    if (!req.user.profilePicture) {
       return res.status(400).json({ message: "No profile picture to delete" });
     }
-
-    const cloudinary = (await import("../config/cloudinary.js")).default;
-
-    // Delete from Cloudinary
-    await cloudinary.uploader.destroy(req.user.profilePicturePublicId);
 
     // Update user
     req.user.profilePicture = null;

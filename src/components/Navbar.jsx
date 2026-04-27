@@ -3,6 +3,7 @@ import { Scale } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import BottomNav from "@/components/BottomNav";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -89,8 +90,8 @@ const Navbar = () => {
           Legal Shathi
         </a>
 
-        {/* Desktop nav links */}
-        <ul style={{ listStyle: "none", display: "flex", alignItems: "center", gap: 2, margin: 0, padding: 0 }}
+        {/* Desktop nav links — hidden on mobile, flex on md+ via Tailwind */}
+        <ul style={{ listStyle: "none", alignItems: "center", gap: 2, margin: 0, padding: 0 }}
             className="hidden md:flex">
             {navLinks.map((l) => (
               <li key={l.label}>
@@ -229,6 +230,9 @@ const Navbar = () => {
           )}
         </div>
       )}
+
+      {/* Mobile bottom nav — rendered here so every page using <Navbar> gets it */}
+      <BottomNav />
     </>
   );
 };

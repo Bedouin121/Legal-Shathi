@@ -203,6 +203,7 @@ function BackToTop() {
   if (!show) return null;
   return (
     <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      className="back-to-top-btn"
       style={{ position: "fixed", bottom: 80, right: 20, zIndex: 80,
         width: 44, height: 44, borderRadius: "50%", border: "none",
         background: "linear-gradient(135deg,#22c55e,#15803d)",
@@ -428,28 +429,6 @@ const Index = () => {
       </section>
 
       <Footer />
-
-      {/* ══════════════════════ MOBILE BOTTOM NAV ══════════════════════ */}
-      <nav className="bottom-nav" aria-label="Mobile navigation">
-        {[
-          { icon: "🏠", label: "Home", action: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-          { icon: "⚖️", label: "Laws", action: () => document.getElementById("modules")?.scrollIntoView({ behavior: "smooth" }) },
-          { icon: "🤖", label: "AI Chat", action: () => navigate("/chat") },
-          { icon: "📄", label: "Templates", action: () => navigate("/templates") },
-          { icon: "👤", label: "Account", action: () => navigate(user ? "/profile" : "/login") },
-        ].map(({ icon, label, action }) => (
-          <button key={label} onClick={action}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-              border: "none", background: "transparent", cursor: "pointer", padding: "6px 0",
-              color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif",
-              fontSize: ".65rem", fontWeight: 600, transition: "all .2s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = "var(--green)"; e.currentTarget.children[0].style.transform = "translateY(-2px) scale(1.1)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "var(--ls-text2)"; e.currentTarget.children[0].style.transform = ""; }}>
-            <span style={{ fontSize: "1.3rem", transition: "transform .2s" }}>{icon}</span>
-            {label}
-          </button>
-        ))}
-      </nav>
 
       <BackToTop />
 
