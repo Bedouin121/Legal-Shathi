@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Bot, User, Loader2, AlertCircle, ArrowLeft, Trash2, Copy, Check, Brain } from "lucide-react";
+import { Sparkles, Send, Bot, User, Loader2, AlertCircle, ArrowLeft, Trash2, Copy, Check, Brain, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { chatAPI } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import ProfileDropdown from "@/components/ProfileDropdown";
@@ -247,9 +247,27 @@ const Chat = () => {
                 : `${contextMessages} of ${SESSION_MEMORY_LIMIT} messages in context`
               }
             </p>
+            </p>
           </div>
 
-          <div className="mt-auto pt-4 border-t border-border">
+          <div className="mt-auto pt-4 flex flex-col gap-3">
+            {/* Find Lawyer CTA - Sidebar */}
+            <Link 
+              to="/find-lawyer" 
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-900 to-green-800 p-4 text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+            >
+              <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-500/20 blur-xl pointer-events-none"></div>
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
+                  <Scale className="h-4 w-4 text-emerald-100" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-white">Find a Lawyer</h4>
+                  <p className="text-[10px] text-emerald-100/80 mt-0.5">Need a human expert?</p>
+                </div>
+              </div>
+            </Link>
+
             <div className="rounded-xl bg-gradient-to-br from-blue-500/10 to-violet-500/10 border border-primary/20 p-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
                 <span className="text-foreground font-medium">AI Shathi</span> is powered by GPT-4o mini and specializes in Bangladeshi law and legal templates.
