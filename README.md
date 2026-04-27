@@ -9,9 +9,24 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Start the frontend (Vite) dev server.
 npm run dev
 ```
+
+## Running the backend (API)
+
+The backend lives in `server/` and runs on `http://localhost:5000` by default.
+
+```sh
+cd server
+npm i
+npm run dev
+```
+
+### AI Document Analysis (PDF/DOCX)
+
+- **Endpoint**: `POST /api/documents/analyze` (multipart/form-data: `file`, optional `documentType`)
+- **AI key**: set `OPENAI_API_KEY` in `server/.env` to enable AI-enhanced analysis. If not set, the app falls back to rule-based checks.
 
 **Edit a file directly in GitHub**
 

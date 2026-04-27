@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { LAW_CATEGORIES, lawSections } from "@/data/laws";
+import { judgments, JUDGMENT_TOPICS } from "@/data/judgments";
+import { judgmentAPI } from "@/services/api";
 
 const LAW_MODULES = [
   { icon: "📜", title: "Constitutional Law", tag: "chip-g" },
@@ -55,6 +57,13 @@ const LegalResources = () => {
   const [detailQuery, setDetailQuery] = useState("");
   const [lang, setLang] = useState("both"); // en | bn | both
   const [onlyBookmarked, setOnlyBookmarked] = useState(false);
+  const [judgmentQuery, setJudgmentQuery] = useState("");
+  const [judgmentYearFilter, setJudgmentYearFilter] = useState("All");
+  const [judgmentTopicFilter, setJudgmentTopicFilter] = useState("All");
+  const [selectedJudgmentId, setSelectedJudgmentId] = useState(judgments[0]?.id || null);
+  const [summary, setSummary] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
   const categoryCounts = useMemo(() => {
     const counts = Object.create(null);
     for (const c of LAW_CATEGORIES) counts[c] = 0;
@@ -124,12 +133,57 @@ const LegalResources = () => {
 
   const selected = useMemo(() => filtered.find((x) => x.id === selectedId) || lawSections.find((x) => x.id === selectedId) || filtered[0] || lawSections[0] || null, [filtered, selectedId]);
 
+  const judgmentYears = useMemo(
+    () => ["All", ...Array.from(new Set(judgments.map((j) => j.year))).sort((a, b) => b - a)],
+    []
+  );
+
+  const filteredJudgments = useMemo(() => {
+    const q = norm(judgmentQuery);
+    return judgments
+      .filter((j) => judgmentYearFilter === "All" || j.year.toString() === judgmentYearFilter)
+      .filter((j) => judgmentTopicFilter === "All" || j.topic === judgmentTopicFilter)
+      .filter((j) => {
+        if (!q) return true;
+        const hay = norm([j.title, j.citation, j.summaryEn, j.summaryBn, j.details, j.topic].join(" "));
+        return hay.includes(q);
+      });
+  }, [judgmentQuery, judgmentYearFilter, judgmentTopicFilter]);
+
+  const selectedJudgment = useMemo(
+    () => filteredJudgments.find((x) => x.id === selectedJudgmentId) || judgments.find((x) => x.id === selectedJudgmentId) || filteredJudgments[0] || judgments[0] || null,
+    [filteredJudgments, selectedJudgmentId]
+  );
+
   useEffect(() => {
     if (!selected) return;
     // if the selected item is no longer visible (due to filters), select first visible
     const stillVisible = filtered.some((x) => x.id === selected.id);
     if (!stillVisible && filtered[0]) setSelectedId(filtered[0].id);
   }, [filtered, selected]);
+
+  useEffect(() => {
+    if (!selectedJudgment) return;
+    const stillVisible = filteredJudgments.some((x) => x.id === selectedJudgment.id);
+    if (!stillVisible) setSelectedJudgmentId(filteredJudgments[0]?.id || judgments[0]?.id || null);
+  }, [filteredJudgments, selectedJudgment]);
+
+  const requestJudgmentSummary = async () => {
+    if (!selectedJudgment) return;
+
+    setSummaryLoading(true);
+    setSummaryError("");
+    setSummary("");
+
+    try {
+      const data = await judgmentAPI.summarize(selectedJudgment);
+      setSummary(data.reply || data?.message || "No summary returned.");
+    } catch (error) {
+      setSummaryError(error.message || "Unable to generate summary.");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--ls-text)", overflowX: "hidden", paddingTop: 64 }}>
@@ -451,6 +505,229 @@ const LegalResources = () => {
                           Note: These are simplified summaries for accessibility. For official wording, consult the published law text.
                         </div>
                       </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="sr" style={{ marginTop: 32 }}>
+            <div
+              style={{
+                ...S.card,
+                padding: 20,
+              }}
+            >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                <div>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: "1.1rem" }}>
+                    Supreme Court Judgment Search
+                  </div>
+                  <div style={{ color: "var(--ls-text2)", maxWidth: 620, fontSize: ".95rem", marginTop: 6 }}>
+                    Search Bangladesh Supreme Court judgments by year or topic, then generate an AI summary in 4–5 bullet points.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", marginBottom: 18 }}>
+                <input
+                  value={judgmentQuery}
+                  onChange={(e) => setJudgmentQuery(e.target.value)}
+                  placeholder="Search judgments by title, citation, topic, or keywords…"
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    border: "1px solid var(--ls-border)",
+                    background: "var(--ls-card)",
+                    color: "var(--ls-text)",
+                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                    outline: "none",
+                  }}
+                />
+                <select
+                  value={judgmentYearFilter}
+                  onChange={(e) => setJudgmentYearFilter(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    border: "1px solid var(--ls-border)",
+                    background: "transparent",
+                    color: "var(--ls-text)",
+                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <option value="All">All years</option>
+                  {judgmentYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={judgmentTopicFilter}
+                  onChange={(e) => setJudgmentTopicFilter(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    border: "1px solid var(--ls-border)",
+                    background: "transparent",
+                    color: "var(--ls-text)",
+                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <option value="All">All topics</option>
+                  {JUDGMENT_TOPICS.map((topic) => (
+                    <option key={topic} value={topic}>
+                      {topic}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 360px) 1fr", gap: 14, alignItems: "stretch" }}>
+                <div
+                  style={{
+                    border: "1px solid var(--ls-border)",
+                    borderRadius: 16,
+                    background: "rgba(255,255,255,.03)",
+                    overflow: "hidden",
+                    minHeight: 420,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid var(--ls-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: ".9rem" }}>
+                      {filteredJudgments.length} judgments
+                    </div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".8rem", color: "var(--ls-text2)" }}>
+                      Filter by year or topic
+                    </div>
+                  </div>
+                  <div style={{ padding: 10, overflowY: "auto", maxHeight: 560 }}>
+                    {filteredJudgments.length === 0 ? (
+                      <div style={{ padding: 12, color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                        No matching judgments. Try a different keyword, year, or topic.
+                      </div>
+                    ) : (
+                      filteredJudgments.map((j) => {
+                        const active = selectedJudgment?.id === j.id;
+                        return (
+                          <button
+                            key={j.id}
+                            type="button"
+                            onClick={() => setSelectedJudgmentId(j.id)}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              padding: "12px 12px",
+                              borderRadius: 14,
+                              border: active ? "1px solid rgba(34,197,94,.45)" : "1px solid transparent",
+                              background: active ? "rgba(34,197,94,.10)" : "transparent",
+                              cursor: "pointer",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                              marginBottom: 10,
+                            }}
+                          >
+                            <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 900, fontSize: ".92rem" }}>
+                              {j.title}
+                            </div>
+                            <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".82rem", color: "var(--ls-text2)" }}>
+                              {j.citation} • {j.year} • {j.topic}
+                            </div>
+                            <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".82rem", color: "var(--ls-text2)" }}>
+                              {j.summaryEn}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    border: "1px solid var(--ls-border)",
+                    borderRadius: 16,
+                    background: "rgba(255,255,255,.03)",
+                    overflow: "hidden",
+                    minHeight: 420,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <div style={{ padding: 12, borderBottom: "1px solid var(--ls-border)", display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 900, fontSize: ".95rem" }}>
+                        {selectedJudgment ? selectedJudgment.title : "Select a judgment"}
+                      </div>
+                      {selectedJudgment && (
+                        <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: ".86rem", color: "var(--ls-text2)", marginTop: 2 }}>
+                          {selectedJudgment.citation} • {selectedJudgment.year} • {selectedJudgment.topic}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={requestJudgmentSummary}
+                      disabled={!selectedJudgment || summaryLoading}
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: 12,
+                        border: "1px solid var(--ls-border)",
+                        background: summaryLoading ? "rgba(34,197,94,.12)" : "rgba(34,197,94,.16)",
+                        color: "var(--ls-text)",
+                        fontFamily: "'Plus Jakarta Sans',sans-serif",
+                        fontWeight: 900,
+                        cursor: summaryLoading ? "default" : "pointer",
+                      }}
+                    >
+                      {summaryLoading ? "Generating summary..." : "Generate AI Summary"}
+                    </button>
+                  </div>
+                  <div style={{ padding: 14, overflowY: "auto", maxHeight: 560, display: "grid", gap: 12 }}>
+                    {!selectedJudgment ? (
+                      <div style={{ color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                        Pick a case from the list to view details and request an AI judgment summary.
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".88rem", lineHeight: 1.7, color: "var(--ls-text2)" }}>
+                          {selectedJudgment.details}
+                        </div>
+                        <div style={{ display: "grid", gap: 10 }}>
+                          <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 900 }}>AI Summary</div>
+                          {summaryError && (
+                            <div style={{ color: "#f87171", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{summaryError}</div>
+                          )}
+                          {summary ? (
+                            <div style={{ display: "grid", gap: 8 }}>
+                              {summary.split(/\r?\n/).filter(Boolean).map((line, idx) => (
+                                <div key={idx} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontFamily: "'Plus Jakarta Sans',sans-serif", color: "var(--ls-text2)" }}>
+                                  <span style={{ minWidth: 18, color: "var(--ls-text)" }}>•</span>
+                                  <span>{line}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                              AI summary appears here after you click the button.
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
