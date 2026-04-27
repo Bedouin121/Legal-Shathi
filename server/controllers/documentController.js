@@ -155,3 +155,57 @@ export const generateDocumentStream = async (req, res) => {
     res.end();
   }
 };
+
+// @desc    Extract NID details from an uploaded image
+// @route   POST /api/documents/extract-nid
+export const extractNID = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image provided" });
+    }
+
+    const base64Image = req.file.buffer.toString("base64");
+    const mimeType = req.file.mimetype;
+    const dataURI = `data:${mimeType};base64,${base64Image}`;
+
+    const client = getOpenAI();
+    const completion = await client.chat.completions.create({
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a Bangladeshi document extraction AI. Extract the following fields from the provided ID card: Name (English), Name (Bengali), Father's Name (English/Bengali), Mother's Name, Date of Birth, NID Number, and Address. Return ONLY a pure JSON object mapping these exact keys: 'name', 'fatherName', 'motherName', 'dob', 'nidNumber', 'address'. If a field is missing, set its value to an empty string. Do NOT use markdown code blocks or backticks. Return raw JSON only.",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Extract details from this NID card." },
+            { type: "image_url", image_url: { url: dataURI } },
+          ],
+        },
+      ],
+      max_tokens: 500,
+      temperature: 0.1,
+    });
+
+    const rawResponse = completion.choices[0].message.content.trim();
+    
+    // Clean up potential markdown formatting if the model disobeys
+    const jsonString = rawResponse.replace(/^```json/i, "").replace(/^```/, "").replace(/```$/, "").trim();
+
+    const extractedData = JSON.parse(jsonString);
+
+    if (req.user) {
+      logActivity(req.user._id, "nid_extracted", {});
+    }
+
+    res.json(extractedData);
+  } catch (error) {
+    console.error("NID Extraction error:", error);
+    if (error instanceof SyntaxError) {
+       return res.status(500).json({ message: "Failed to parse AI response. Please try a clearer image." });
+    }
+    next(error);
+  }
+};
+
