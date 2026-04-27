@@ -18,6 +18,8 @@ import LegalResources from "./pages/LegalResources";
 import ESignature from "./pages/ESignature";
 import DocumentAnalysis from "./pages/DocumentAnalysis";
 import ActivityTimeline from "./pages/ActivityTimeline";
+import FindLawyer from "./pages/FindLawyer";
+
 const queryClient = new QueryClient();
 
 const FloatingChatbot = () => {
@@ -43,6 +45,7 @@ const AppRoutes = () => (
       <Route path="/analyze" element={<DocumentAnalysis />} />
       <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
       <Route path="/activity" element={<ActivityTimeline />} />
+      <Route path="/find-lawyer" element={<FindLawyer />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </>
