@@ -16,14 +16,14 @@ const BottomNav = () => {
 
   const handleNav = (path) => {
     if (path === "__account__") {
-      navigate(user ? "/profile" : "/login");
+      navigate(user ? "/activity" : "/login");
     } else {
       navigate(path);
     }
   };
 
   const getActivePath = (path) => {
-    if (path === "__account__") return location.pathname === "/profile" || location.pathname === "/login";
+    if (path === "__account__") return location.pathname === "/activity" || location.pathname === "/login";
     return location.pathname === path;
   };
 
