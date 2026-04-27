@@ -247,7 +247,6 @@ const Chat = () => {
                 : `${contextMessages} of ${SESSION_MEMORY_LIMIT} messages in context`
               }
             </p>
-            </p>
           </div>
 
           <div className="mt-auto pt-4 flex flex-col gap-3">
