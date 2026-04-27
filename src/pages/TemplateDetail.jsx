@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Sparkles,
   Check,
+  ScanLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { templateAPI, documentAPI } from "@/services/api";
@@ -68,6 +69,8 @@ const TemplateDetail = () => {
   const [generatedDoc, setGeneratedDoc] = useState("");
   const [error, setError] = useState(null);
   const [step, setStep] = useState("form");
+  const [extractingNid, setExtractingNid] = useState(false);
+  const fileInputRef = useRef(null);
   const [previewWidth, setPreviewWidth] = useState(() =>
     typeof window !== "undefined"
       ? Math.min(window.innerWidth - 32, PAGE_WIDTH)
@@ -125,6 +128,71 @@ const TemplateDetail = () => {
 
   const handleInputChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleNidUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setExtractingNid(true);
+    setError(null);
+    try {
+      const extracted = await documentAPI.extractNID(file);
+      
+      setFormData((prev) => {
+        const updated = { ...prev };
+        
+        // 1. Identify which party this NID belongs to (e.g., 'seller' vs 'buyer')
+        // We look for the first empty 'Name' field to set our target prefix.
+        const getPrefix = (fName) => {
+          const match = fName.match(/^([a-z]+[0-9]*)/i);
+          return match ? match[1].toLowerCase() : "";
+        };
+        const allPrefixes = [...new Set(fields.map(f => getPrefix(f.name)))];
+        
+        let targetPrefix = null;
+        for (const prefix of allPrefixes) {
+          const nameField = fields.find(f => f.name.toLowerCase() === `${prefix}name`);
+          if (nameField && !updated[nameField.name]) {
+            targetPrefix = prefix;
+            break;
+          }
+        }
+
+        // 2. Map data only to the targeted prefix
+        fields.forEach((field) => {
+          const key = field.name.toLowerCase();
+          const label = field.label.toLowerCase();
+          
+          // Skip if this field belongs to another party
+          const fieldPrefix = getPrefix(field.name);
+          if (targetPrefix && fieldPrefix !== targetPrefix && allPrefixes.includes(fieldPrefix) && fieldPrefix !== "address" && fieldPrefix !== "date") {
+             return;
+          }
+
+          if (!updated[field.name]) {
+            if (key.includes("nid") && extracted.nidNumber) {
+              updated[field.name] = extracted.nidNumber;
+            } else if (key.includes("address") && extracted.address) {
+              updated[field.name] = extracted.address;
+            } else if (key.includes("father") && extracted.fatherName) {
+              updated[field.name] = extracted.fatherName;
+            } else if (key.includes("name") && !key.includes("father") && !key.includes("mother") && !key.includes("company") && !key.includes("business")) {
+              // Prefer Bengali name if the label asks for it
+              const wantsBengali = label.includes("বাংলা") || label.includes("bengali");
+              const nameValue = wantsBengali ? extracted.nameBengali : (extracted.nameEnglish || extracted.nameBengali);
+              if (nameValue) updated[field.name] = nameValue;
+            }
+          }
+        });
+        return updated;
+      });
+    } catch (err) {
+      setError(err.message || "Failed to extract NID. Make sure the image is clear.");
+    } finally {
+      setExtractingNid(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleGenerate = async (e) => {
@@ -292,9 +360,33 @@ const TemplateDetail = () => {
 
       {step === "form" ? (
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-          <div className="mb-6 rounded-xl border border-border bg-card p-5">
-            <h2 className="text-lg font-bold text-foreground">{template.title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
+          <div className="mb-6 rounded-xl border border-border bg-card p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">{template.title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
+            </div>
+            <div className="shrink-0">
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleNidUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={extractingNid || generating}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:opacity-90 disabled:opacity-60"
+              >
+                {extractingNid ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ScanLine className="h-4 w-4" />
+                )}
+                {extractingNid ? "Scanning NID..." : "Auto-fill via NID"}
+              </button>
+            </div>
           </div>
 
           <div className="mb-6">

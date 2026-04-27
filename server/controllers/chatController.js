@@ -103,9 +103,13 @@ export const sendMessageStream = async (req, res) => {
 
     chat.messages.push({ role: "user", content: message });
 
+    // SESSION MEMORY: Only send the last 10 messages to the AI
+    const SESSION_LIMIT = 10;
+    const recentMessages = chat.messages.slice(-SESSION_LIMIT);
+
     const aiMessages = [
       { role: "system", content: SYSTEM_PROMPT },
-      ...chat.messages.map((m) => ({ role: m.role, content: m.content })),
+      ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
     ];
 
     // Set SSE headers
@@ -135,13 +139,19 @@ export const sendMessageStream = async (req, res) => {
       }
     }
 
-    // Save to DB after stream completes
+    // Save AI reply to DB
     chat.messages.push({ role: "assistant", content: fullReply });
+
+    // TRIM: Keep only the last 20 messages (10 user + 10 assistant) to avoid DB bloat
+    if (chat.messages.length > 20) {
+      chat.messages = chat.messages.slice(-20);
+    }
+
     await chat.save();
 
     logActivity(req.user._id, "chat_sent", { chatId: chat._id, preview: message.slice(0, 60) });
 
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true, messageCount: chat.messages.length })}\n\n`);
     res.end();
   } catch (error) {
     console.error("Stream error:", error);
@@ -152,6 +162,7 @@ export const sendMessageStream = async (req, res) => {
     res.end();
   }
 };
+
 
 // ============= Non-streaming endpoints (kept as fallback) =============
 

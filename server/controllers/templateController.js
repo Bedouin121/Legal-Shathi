@@ -4,7 +4,7 @@ import Template from "../models/Template.js";
 // @route   GET /api/templates
 export const getTemplates = async (req, res, next) => {
   try {
-    const { category, search, tab, page = 1, limit = 8 } = req.query;
+    const { category, search, tab, language, page = 1, limit = 8 } = req.query;
 
     const query = {};
 
@@ -13,11 +13,17 @@ export const getTemplates = async (req, res, next) => {
       query.category = category;
     }
 
-    // Search filter
+    // Language filter (EN or BN)
+    if (language && language !== "All") {
+      query.languages = language; // matches array field containing the value
+    }
+
+    // Search filter — title, description, category
     if (search && search.trim()) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -26,10 +32,16 @@ export const getTemplates = async (req, res, next) => {
       query.isPopular = true;
     } else if (tab === "Free") {
       query.isFree = true;
+    } else if (tab === "Bengali") {
+      query.languages = "BN";
+    } else if (tab === "English") {
+      query.languages = "EN";
     }
 
-    // Sort
-    let sortOption = { createdAt: -1 }; // Latest by default
+    // Sort: Popular tab → sort by isPopular desc, others → latest
+    let sortOption = tab === "Popular"
+      ? { isPopular: -1, createdAt: -1 }
+      : { createdAt: -1 };
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Template.countDocuments(query);

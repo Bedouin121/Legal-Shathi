@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Bot, User, Loader2, AlertCircle, ArrowLeft, Trash2, Copy, Check } from "lucide-react";
+import { Sparkles, Send, Bot, User, Loader2, AlertCircle, ArrowLeft, Trash2, Copy, Check, Brain, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { chatAPI } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import ProfileDropdown from "@/components/ProfileDropdown";
+
+const SESSION_MEMORY_LIMIT = 10;
 
 const SUGGESTED_QUESTIONS = [
   "What template do I need to sell my property?",
@@ -91,8 +93,12 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chatId, setChatId] = useState(null);
+  const [sessionMsgCount, setSessionMsgCount] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Track user+assistant message pairs for memory indicator (exclude initial greeting)
+  const contextMessages = Math.min(Math.max(messages.length - 1, 0), SESSION_MEMORY_LIMIT);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -124,6 +130,7 @@ const Chat = () => {
       if (user) {
         const result = await chatAPI.sendMessageStream(text, chatId, onChunk);
         setChatId(result.chatId);
+        if (result.messageCount) setSessionMsgCount(Math.min(result.messageCount, SESSION_MEMORY_LIMIT));
       } else {
         await chatAPI.guestStream(text, messages, onChunk);
       }
@@ -169,9 +176,15 @@ const Chat = () => {
               </div>
               <div>
                 <h1 className="font-display font-semibold text-foreground text-sm sm:text-base">AI Shathi</h1>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
                   <span className="text-xs text-muted-foreground">Legal AI · Online</span>
+                  {contextMessages > 0 && (
+                    <span className="hidden sm:flex items-center gap-1 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 border border-primary/20">
+                      <Brain className="h-3 w-3" />
+                      {contextMessages}/{SESSION_MEMORY_LIMIT} in memory
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -208,7 +221,52 @@ const Chat = () => {
               </button>
             ))}
           </div>
-          <div className="mt-auto pt-4 border-t border-border">
+
+          {/* Session Memory Indicator */}
+          <div className="mt-4 rounded-xl bg-gradient-to-br from-primary/10 to-emerald-500/5 border border-primary/20 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Brain className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-foreground">Session Memory</span>
+            </div>
+            <div className="flex gap-1 mb-2 flex-wrap">
+              {Array.from({ length: SESSION_MEMORY_LIMIT }).map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-1.5 flex-1 rounded-full transition-all",
+                    i < contextMessages ? "bg-primary" : "bg-border"
+                  )}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {contextMessages === 0
+                ? "Start chatting — AI remembers your last 10 messages."
+                : contextMessages >= SESSION_MEMORY_LIMIT
+                ? "Memory full — oldest messages are rolling off."
+                : `${contextMessages} of ${SESSION_MEMORY_LIMIT} messages in context`
+              }
+            </p>
+          </div>
+
+          <div className="mt-auto pt-4 flex flex-col gap-3">
+            {/* Find Lawyer CTA - Sidebar */}
+            <Link 
+              to="/find-lawyer" 
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-900 to-green-800 p-4 text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+            >
+              <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-500/20 blur-xl pointer-events-none"></div>
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
+                  <Scale className="h-4 w-4 text-emerald-100" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-white">Find a Lawyer</h4>
+                  <p className="text-[10px] text-emerald-100/80 mt-0.5">Need a human expert?</p>
+                </div>
+              </div>
+            </Link>
+
             <div className="rounded-xl bg-gradient-to-br from-blue-500/10 to-violet-500/10 border border-primary/20 p-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
                 <span className="text-foreground font-medium">AI Shathi</span> is powered by GPT-4o mini and specializes in Bangladeshi law and legal templates.

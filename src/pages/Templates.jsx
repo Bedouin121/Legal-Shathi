@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { Search, CheckSquare, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Search, Globe, BookOpen, Star, Scale, ArrowRight, CheckSquare, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Navbar from "@/components/Navbar";
 import CategorySidebar from "@/components/CategorySidebar";
-import FilterTabs from "@/components/FilterTabs";
 import TemplateCard from "@/components/TemplateCard";
 import TemplatePagination from "@/components/TemplatePagination";
 import Footer from "@/components/Footer";
@@ -14,22 +13,30 @@ import { useAuth } from "@/context/AuthContext";
 
 const ITEMS_PER_PAGE = 8;
 
+const FILTER_TABS = [
+  { id: "Latest",  label: "Latest",  icon: BookOpen },
+  { id: "Popular", label: "Popular", icon: Star },
+  { id: "Free",    label: "Free",    icon: null },
+  { id: "Bengali", label: "বাংলা",   icon: Globe },
+  { id: "English", label: "English", icon: Globe },
+];
+
 const Templates = () => {
   const { user, updateFavorites } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery]       = useState("");
   const [activeCategory, setActiveCategory] = useState("All Templates");
-  const [activeTab, setActiveTab] = useState("Latest");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [templates, setTemplates] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState(new Set());
-  
+  const [activeTab, setActiveTab]           = useState("Latest");
+  const [currentPage, setCurrentPage]       = useState(1);
+  const [templates, setTemplates]           = useState([]);
+  const [totalPages, setTotalPages]         = useState(1);
+  const [total, setTotal]                   = useState(0);
+  const [loading, setLoading]               = useState(true);
+  const [favorites, setFavorites]           = useState(new Set());
+
   // Bulk Action State
   const [selectedTemplates, setSelectedTemplates] = useState(new Set());
-  const [selectionMode, setSelectionMode] = useState(false);
-  const navigate = useNavigate();
+  const [selectionMode, setSelectionMode]         = useState(false);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -71,8 +78,8 @@ const Templates = () => {
   };
 
   const handleCategoryChange = (cat) => { setActiveCategory(cat); setCurrentPage(1); };
-  const handleTabChange = (tab) => { setActiveTab(tab); setCurrentPage(1); };
-  const handleSearchChange = (q) => { setSearchQuery(q); setCurrentPage(1); };
+  const handleTabChange      = (tab) => { setActiveTab(tab);      setCurrentPage(1); };
+  const handleSearchChange   = (q)   => { setSearchQuery(q);      setCurrentPage(1); };
 
   const toggleSelect = (id) => {
     setSelectedTemplates((prev) => {
@@ -84,8 +91,7 @@ const Templates = () => {
 
   const handleBulkGenerate = () => {
     if (selectedTemplates.size === 0) return;
-    const selectedIds = Array.from(selectedTemplates);
-    navigate(`/bulk-template?ids=${selectedIds.join(",")}`);
+    navigate(`/bulk-template?ids=${Array.from(selectedTemplates).join(",")}`);
   };
 
   return (
@@ -95,9 +101,9 @@ const Templates = () => {
       <div className="flex flex-1" style={{ paddingTop: 64 }}>
         <CategorySidebar activeCategory={activeCategory} onCategoryChange={handleCategoryChange} />
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           {/* Mobile search */}
-          <div className="relative mb-6 md:hidden">
+          <div className="relative mb-5 md:hidden">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search templates..."
@@ -107,34 +113,110 @@ const Templates = () => {
             />
           </div>
 
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Header */}
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground">Legal Templates</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{total} templates available</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {loading ? "Loading…" : `${total} template${total !== 1 ? "s" : ""} available`}
+              </p>
             </div>
-            <div className="flex items-center gap-4">
-              <FilterTabs activeTab={activeTab} onTabChange={handleTabChange} />
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Filter Tabs */}
+              {FILTER_TABS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => handleTabChange(id)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium border transition-all",
+                    activeTab === id
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/30"
+                      : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  )}
+                >
+                  {Icon && <Icon className="h-3.5 w-3.5" />}
+                  {label}
+                </button>
+              ))}
+
+              {/* Bulk Select Button */}
               <button
                 onClick={() => {
                   setSelectionMode(!selectionMode);
                   if (selectionMode) setSelectedTemplates(new Set());
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                  selectionMode 
-                    ? "border-primary bg-primary/10 text-primary" 
-                    : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium border transition-all",
+                  selectionMode
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
                 )}
               >
-                <CheckSquare className="h-4 w-4" />
+                <CheckSquare className="h-3.5 w-3.5" />
                 Select
               </button>
             </div>
           </div>
 
+          {/* Active filter indicator */}
+          {(activeCategory !== "All Templates" || activeTab !== "Latest" || searchQuery) && (
+            <div className="mb-4 flex flex-wrap gap-2 items-center text-xs text-muted-foreground">
+              <span>Filtering by:</span>
+              {activeCategory !== "All Templates" && (
+                <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 border border-primary/20">
+                  📁 {activeCategory}
+                </span>
+              )}
+              {activeTab !== "Latest" && (
+                <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 border border-primary/20">
+                  {activeTab === "Bengali" ? "🇧🇩 Bengali" : activeTab === "English" ? "🇬🇧 English" : `⭐ ${activeTab}`}
+                </span>
+              )}
+              {searchQuery && (
+                <span className="bg-amber-500/10 text-amber-600 rounded-full px-2.5 py-0.5 border border-amber-500/20">
+                  🔍 "{searchQuery}"
+                </span>
+              )}
+              <button
+                onClick={() => { handleCategoryChange("All Templates"); handleTabChange("Latest"); handleSearchChange(""); }}
+                className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Clear all ×
+              </button>
+            </div>
+          )}
+
+          {/* Find Lawyer CTA Banner */}
+          <div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-900 via-green-800 to-emerald-900 p-6 sm:p-8 text-white shadow-lg border border-emerald-700/50">
+            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]"></div>
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none"></div>
+            <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none"></div>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="max-w-2xl">
+                <div className="flex items-center gap-2 mb-2 text-emerald-300">
+                  <Scale className="h-5 w-5" />
+                  <span className="text-xs font-semibold tracking-wider uppercase">Professional Legal Services</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-display font-bold mb-2">Need a custom legal document?</h2>
+                <p className="text-emerald-100/90 text-sm sm:text-base leading-relaxed">
+                  While our AI templates cover standard needs, complex legal matters require an expert touch. Connect with top-rated, verified lawyers across Bangladesh for personalized drafting and consultation.
+                </p>
+              </div>
+              <Link
+                to="/find-lawyer"
+                className="shrink-0 group inline-flex items-center justify-center gap-2 bg-white text-emerald-900 font-semibold px-6 py-3.5 rounded-xl hover:bg-emerald-50 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] shadow-xl active:scale-95"
+              >
+                Find a Lawyer
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Grid */}
           {loading ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
                 <div key={i} className="h-64 animate-pulse rounded-xl border border-border bg-card" />
               ))}
             </div>
@@ -154,8 +236,15 @@ const Templates = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="text-5xl mb-4">📄</div>
               <p className="font-display text-lg text-muted-foreground">No templates found</p>
               <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search or filters</p>
+              <button
+                onClick={() => { handleCategoryChange("All Templates"); handleTabChange("Latest"); handleSearchChange(""); }}
+                className="mt-4 text-xs text-primary hover:underline"
+              >
+                Clear all filters
+              </button>
             </div>
           )}
 
@@ -176,7 +265,6 @@ const Templates = () => {
             </div>
             <span className="text-sm font-medium text-foreground">Selected</span>
           </div>
-          
           <button
             onClick={handleBulkGenerate}
             disabled={selectedTemplates.size === 0}
@@ -184,12 +272,8 @@ const Templates = () => {
           >
             Generate Documents
           </button>
-          
           <button
-            onClick={() => {
-              setSelectionMode(false);
-              setSelectedTemplates(new Set());
-            }}
+            onClick={() => { setSelectionMode(false); setSelectedTemplates(new Set()); }}
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="h-4 w-4" />

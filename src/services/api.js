@@ -211,6 +211,27 @@ export const documentAPI = {
   getFields: (templateTitle) =>
     apiFetch(`/documents/fields/${encodeURIComponent(templateTitle)}`),
 
+  extractNID: async (file) => {
+    const formData = new FormData();
+    formData.append("nidImage", file);
+    
+    const token = getToken();
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/documents/extract-nid`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to extract NID details");
+    }
+    return data;
+  },
+
   generate: (templateTitle, formData, language = "english") =>
     apiFetch("/documents/generate", {
       method: "POST",
