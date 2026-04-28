@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Camera, FileText, PhoneCall, ShieldAlert } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { templateAPI, favoriteAPI } from "@/services/api";
@@ -80,6 +81,12 @@ const TEMPLATE_ICONS = {
   "Employment": "👔", "Property": "🏠", "Family": "👨‍👩‍👧", "Commercial": "💼",
   "Criminal": "⚖️", "Civil": "📋", "Corporate": "🏢", "Default": "📄",
 };
+
+const CITIZEN_TOOLS = [
+  { icon: Camera, title: "Incident Log", desc: "Capture time, place, people, media, and witness details before facts get lost." },
+  { icon: PhoneCall, title: "Trusted Contact Alert", desc: "Prepare a quick location and incident summary for family or a lawyer." },
+  { icon: FileText, title: "Complaint Drafts", desc: "Turn evidence into a structured complaint or legal aid request." },
+];
 
 const S = {
   section: { padding: "96px clamp(16px,5vw,80px)", maxWidth: 1180, margin: "0 auto" },
@@ -383,6 +390,106 @@ const Index = () => {
       </section>
 
       {/* ══════════════════════ CTA ══════════════════════ */}
+      <section style={{ padding: "92px clamp(16px,5vw,80px)", background: "var(--bg)" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+          <div
+            className="citizen-home sr"
+            style={{
+              display: "grid",
+              gridTemplateColumns: ".9fr 1.1fr",
+              gap: 28,
+              alignItems: "stretch",
+            }}
+          >
+            <div
+              style={{
+                border: "1px solid var(--ls-border)",
+                background: "linear-gradient(180deg,var(--ls-card),var(--bg3))",
+                borderRadius: 20,
+                padding: "32px clamp(20px,3vw,34px)",
+                boxShadow: "var(--shadow-md)",
+              }}
+            >
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#ffe4e6", color: "#be123c", borderRadius: 999, padding: "6px 12px", fontSize: ".75rem", fontWeight: 800 }}>
+                <ShieldAlert size={15} />
+                Citizen protection
+              </div>
+              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3vw,2.45rem)", fontWeight: 900, lineHeight: 1.15, margin: "18px 0 12px" }}>
+                Help citizens document harassment and get legal support.
+              </h2>
+              <p style={{ color: "var(--ls-text2)", lineHeight: 1.7, fontSize: ".95rem", marginBottom: 24 }}>
+                A focused toolkit for police-stop incidents: evidence capture, trusted contact alerts, rights prompts, and complaint draft preparation.
+              </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  onClick={(e) => { addRipple(e); navigate("/citizen-protection"); }}
+                  className="btn-shimmer"
+                  style={{
+                    position: "relative",
+                    overflow: "hidden",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "12px 20px",
+                    borderRadius: 12,
+                    border: "none",
+                    background: "linear-gradient(135deg,#16a34a,#0f766e)",
+                    color: "#fff",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                    boxShadow: "0 8px 24px rgba(22,163,74,.22)",
+                  }}
+                >
+                  Open Safety Tools
+                </button>
+                <button
+                  onClick={() => navigate("/find-lawyer")}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "12px 20px",
+                    borderRadius: 12,
+                    border: "1px solid var(--ls-border)",
+                    background: "var(--ls-card)",
+                    color: "var(--ls-text)",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                  }}
+                >
+                  Find Lawyer
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }} className="citizen-tool-grid">
+              {CITIZEN_TOOLS.map(({ icon: Icon, title, desc }, i) => (
+                <div
+                  key={title}
+                  className={`sr sr-d${i + 1}`}
+                  style={{
+                    background: "var(--ls-card)",
+                    border: "1px solid var(--ls-border)",
+                    borderRadius: 16,
+                    padding: 20,
+                    boxShadow: "var(--shadow-sm)",
+                    minHeight: 210,
+                  }}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 13, background: "var(--g100)", color: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+                    <Icon size={22} />
+                  </div>
+                  <h3 style={{ fontSize: "1rem", marginBottom: 10, fontWeight: 900 }}>{title}</h3>
+                  <p style={{ color: "var(--ls-text2)", lineHeight: 1.62, fontSize: ".84rem" }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section style={{ padding: "96px clamp(16px,5vw,80px)" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
           <div className="sr" style={{ background: "linear-gradient(135deg,#15803d,#166534)",
@@ -445,6 +552,8 @@ const Index = () => {
           .mod-grid{grid-template-columns:1fr 1fr!important}
           .templates-grid{grid-template-columns:1fr 1fr!important}
           .stats-grid{grid-template-columns:1fr 1fr!important}
+          .citizen-home{grid-template-columns:1fr!important}
+          .citizen-tool-grid{grid-template-columns:1fr!important}
         }
         @media(max-width:640px){
           .feat-grid,.steps-grid,.mod-grid,.templates-grid,.stats-grid{grid-template-columns:1fr!important}

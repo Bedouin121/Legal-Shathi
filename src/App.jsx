@@ -19,6 +19,7 @@ import ESignature from "./pages/ESignature";
 import DocumentAnalysis from "./pages/DocumentAnalysis";
 import ActivityTimeline from "./pages/ActivityTimeline";
 import FindLawyer from "./pages/FindLawyer";
+import CitizenProtection from "./pages/CitizenProtection";
 import TemplateBulkDetail from "./pages/TemplateBulkDetail";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const AppRoutes = () => (
       <Route path="/bulk-template" element={<TemplateBulkDetail />} />
       <Route path="/templates" element={<Templates />} />
       <Route path="/analyze" element={<DocumentAnalysis />} />
+      <Route path="/citizen-protection" element={<CitizenProtection />} />
       <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
       <Route path="/activity" element={<ActivityTimeline />} />
       <Route path="/find-lawyer" element={<FindLawyer />} />

@@ -26,8 +26,8 @@ const buildUserPrompt = (fields, formData, language) => {
     language === "bengali"
       ? "Write the ENTIRE document in Bengali (বাংলা). All text must be in Bengali script."
       : language === "mixed"
-      ? "Write Bengali section headers with English body text."
-      : "Write the document primarily in English with Bengali terms where legally appropriate.";
+        ? "Write Bengali section headers with English body text."
+        : "Write the document primarily in English with Bengali terms where legally appropriate.";
 
   return `Generate a complete, ready-to-use legal document with the following details:\n\n${details}\n\n${languageInstruction}\n\nIMPORTANT: Generate ONLY the document text. Do NOT include any explanations, notes, or markdown formatting. The document should be ready to print on stamp paper. Use proper spacing, numbered clauses, and formal legal language. Include spaces for signatures at the end.`;
 };
@@ -189,7 +189,7 @@ export const extractNID = async (req, res, next) => {
     });
 
     const rawResponse = completion.choices[0].message.content.trim();
-    
+
     // Clean up potential markdown formatting if the model disobeys
     const jsonString = rawResponse.replace(/^```json/i, "").replace(/^```/, "").replace(/```$/, "").trim();
 
@@ -203,7 +203,7 @@ export const extractNID = async (req, res, next) => {
   } catch (error) {
     console.error("NID Extraction error:", error);
     if (error instanceof SyntaxError) {
-       return res.status(500).json({ message: "Failed to parse AI response. Please try a clearer image." });
+      return res.status(500).json({ message: "Failed to parse AI response. Please try a clearer image." });
     }
     next(error);
   }
