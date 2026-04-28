@@ -68,6 +68,7 @@ export const analyzeUploadedDocument = async (req, res, next) => {
         { role: "user", content: userPrompt },
       ],
       temperature: 0.3, // Keeps it focused and professional
+      max_tokens: 4000, // Added limit to prevent OpenRouter 402 Insufficient Credits errors
       response_format: { type: "json_object" },
     });
 
@@ -83,6 +84,6 @@ export const analyzeUploadedDocument = async (req, res, next) => {
 
   } catch (error) {
     console.error("AI Analysis Error:", error);
-    res.status(500).json({ message: "AI Analysis failed to process the document." });
+    res.status(500).json({ message: "AI Analysis failed: " + (error.message || "Unknown error") });
   }
 };
