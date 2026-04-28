@@ -4,6 +4,7 @@ import multer from "multer";
 import { getTemplateFields, generateDocument, generateDocumentStream, extractNID } from "../controllers/documentController.js";
 import { analyzeUploadedDocument } from "../controllers/documentAnalysisController.js";
 import documentUpload from "../middleware/documentUpload.js";
+import { optionalAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -33,8 +34,8 @@ const upload = multer({
 });
 
 router.get("/fields/:templateTitle", getTemplateFields);
-router.post("/generate", docLimiter, generateDocument);
-router.post("/generate/stream", docLimiter, generateDocumentStream);
+router.post("/generate", optionalAuth, docLimiter, generateDocument);
+router.post("/generate/stream", optionalAuth, docLimiter, generateDocumentStream);
 router.post("/extract-nid", upload.single("nidImage"), extractNID);
 router.post("/analyze", analyzeLimiter, documentUpload.single("file"), analyzeUploadedDocument);
 

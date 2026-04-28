@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Scale, Mail, Lock, Loader2 } from "lucide-react";
+import { Scale, Mail, Lock, Loader2, CheckCircle } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,6 +10,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isVerified = searchParams.get("verified") === "true";
+
+  useEffect(() => {
+    if (isVerified) {
+      // Clear URL parameter
+      navigate("/login", { replace: true });
+    }
+  }, [isVerified, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +32,14 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRequestOtp = () => {
+    if (!email) {
+      setError("Please enter your email address first");
+      return;
+    }
+    navigate(`/verify-otp?email=${encodeURIComponent(email)}&from=login`);
   };
 
   return (
@@ -46,6 +63,14 @@ const Login = () => {
           onSubmit={handleSubmit}
           className="rounded-2xl border border-border bg-card p-6 shadow-xl"
         >
+          {/* Success Message */}
+          {isVerified && (
+            <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-900/20 px-4 py-2.5 text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Email verified successfully! You can now sign in.
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 rounded-lg bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
               {error}
@@ -94,6 +119,20 @@ const Login = () => {
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Sign In
           </button>
+
+          {/* OTP Request Link */}
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Need to verify your email?
+            </p>
+            <button
+              type="button"
+              onClick={handleRequestOtp}
+              className="mt-1 text-sm font-medium text-primary hover:underline"
+            >
+              Send Verification Code
+            </button>
+          </div>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Don't have an account?{" "}

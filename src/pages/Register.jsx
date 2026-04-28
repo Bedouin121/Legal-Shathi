@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { authAPI } from "@/services/api";
 import { Scale, Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
 
 const Register = () => {
@@ -10,7 +10,6 @@ const Register = () => {
   const [confirmPass, setConfirmPass] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -28,8 +27,9 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await register(name, email, password);
-      navigate("/");
+      await authAPI.register({ name, email, password });
+      // Redirect to OTP verification page
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err.message);
     } finally {

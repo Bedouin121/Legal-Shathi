@@ -79,7 +79,6 @@ const ProfileDropdown = () => {
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Profile Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-secondary transition-colors"
@@ -100,10 +99,8 @@ const ProfileDropdown = () => {
           </span>
         </button>
 
-        {/* Dropdown */}
         {isOpen && (
           <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
-            {/* Profile Picture Section */}
             <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border">
               <div className="flex flex-col items-center">
                 <div
@@ -124,7 +121,6 @@ const ProfileDropdown = () => {
                   )}
                 </div>
 
-                {/* Upload Button */}
                 {!profilePicture && (
                   <button
                     onClick={() => fileInputRef.current?.click()}
@@ -145,7 +141,6 @@ const ProfileDropdown = () => {
                   </button>
                 )}
 
-                {/* Change & Remove Picture Buttons (when picture exists) */}
                 {profilePicture && (
                   <div className="flex flex-col gap-2 w-full">
                     <button
@@ -195,7 +190,6 @@ const ProfileDropdown = () => {
               </div>
             </div>
 
-            {/* User Info */}
             <div className="p-4 space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Name</p>
@@ -231,13 +225,12 @@ const ProfileDropdown = () => {
                   <LogOut className="h-4 w-4" />
                   Sign Out
                 </button>
-                </div>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Full Image Modal */}
       {showFullImage && profilePicture && (
         <div
           onClick={() => setShowFullImage(false)}
