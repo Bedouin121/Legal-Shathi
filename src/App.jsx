@@ -50,6 +50,7 @@ const AppRoutes = () => (
       <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
       <Route path="/activity" element={<ActivityTimeline />} />
       <Route path="/find-lawyer" element={<FindLawyer />} />
+      <Route path="/document-analysis" element={<DocumentAnalysis />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </>

@@ -1,259 +1,370 @@
-import { useState } from "react";
-import { 
-  UploadCloud, 
-  FileText, 
-  AlertTriangle, 
-  CheckCircle, 
-  ShieldAlert, 
-  Loader2,
-  FileWarning
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowLeft, FileText, Loader2, ShieldAlert } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { analysisAPI } from "@/services/api";
+import { documentAPI } from "@/services/api";
+
+const DOC_TYPES = [
+  { value: "auto", label: "Auto-detect" },
+  { value: "nda", label: "NDA / Confidentiality" },
+  { value: "employment", label: "Employment" },
+  { value: "service_agreement", label: "Service Agreement" },
+  { value: "lease", label: "Lease / Rent Agreement" },
+  { value: "purchase_sale", label: "Purchase / Sale" },
+];
+
+const riskStyles = {
+  low: { bg: "rgba(34,197,94,.12)", border: "rgba(34,197,94,.25)", color: "#16a34a" },
+  medium: { bg: "rgba(245,158,11,.12)", border: "rgba(245,158,11,.25)", color: "#b45309" },
+  high: { bg: "rgba(249,115,22,.12)", border: "rgba(249,115,22,.25)", color: "#c2410c" },
+  critical: { bg: "rgba(239,68,68,.12)", border: "rgba(239,68,68,.25)", color: "#dc2626" },
+};
+
+const Card = ({ children, style }) => (
+  <div
+    style={{
+      background: "var(--ls-card)",
+      border: "1px solid var(--ls-border)",
+      borderRadius: "var(--r)",
+      boxShadow: "var(--shadow-sm)",
+      padding: 22,
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const SectionTitle = ({ icon: Icon, title, subtitle }) => (
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 12,
+          background: "linear-gradient(135deg,#22c55e,#15803d)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 6px 18px var(--green-glow)",
+          flexShrink: 0,
+        }}
+      >
+        <Icon style={{ width: 20, height: 20, color: "#fff" }} />
+      </div>
+      <div>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 800, fontSize: "1.25rem" }}>{title}</div>
+        {subtitle ? (
+          <div style={{ marginTop: 2, fontSize: ".85rem", color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+            {subtitle}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  </div>
+);
+
+const Pill = ({ children, tone = "low" }) => {
+  const s = riskStyles[tone] || riskStyles.low;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "6px 12px",
+        borderRadius: 999,
+        border: `1px solid ${s.border}`,
+        background: s.bg,
+        color: s.color,
+        fontWeight: 800,
+        fontSize: ".8rem",
+        letterSpacing: ".01em",
+        fontFamily: "'Plus Jakarta Sans',sans-serif",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </span>
+  );
+};
 
 const DocumentAnalysis = () => {
+  const navigate = useNavigate();
+
   const [file, setFile] = useState(null);
+  const [documentType, setDocumentType] = useState("auto");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      if (
-        selectedFile.type === "application/pdf" ||
-        selectedFile.name.endsWith(".docx")
-      ) {
-        setFile(selectedFile);
-        setError(null);
-      } else {
-        setFile(null);
-        setError("Please upload a PDF or DOCX file.");
-      }
-    }
-  };
+  const canAnalyze = useMemo(() => Boolean(file) && !loading, [file, loading]);
 
-  const handleAnalyze = async () => {
+  const onAnalyze = async () => {
     if (!file) return;
-
     setLoading(true);
-    setError(null);
+    setError("");
     setResult(null);
-
     try {
-      const data = await analysisAPI.analyzeDocument(file);
+      const data = await documentAPI.analyze(file, documentType);
       setResult(data);
-    } catch (err) {
-      setError(err.message || "Failed to analyze document. Please try again.");
+    } catch (e) {
+      setError(e.message || "Analysis failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const getRiskColor = (score) => {
-    if (score < 30) return "text-green-600 bg-green-50 border-green-200";
-    if (score < 70) return "text-amber-600 bg-amber-50 border-amber-200";
-    return "text-red-600 bg-red-50 border-red-200";
-  };
-
-  const getRiskIndicatorColor = (score) => {
-    if (score < 30) return "#16a34a"; // green
-    if (score < 70) return "#f59e0b"; // amber
-    return "#dc2626"; // red
+  const onPick = (f) => {
+    setError("");
+    setResult(null);
+    setFile(f || null);
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] flex flex-col font-sans">
+    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--ls-text)", overflowX: "hidden", paddingTop: 64 }}>
       <Navbar />
-      
-      <main className="flex-1 container mx-auto px-4 py-20 sm:px-6 max-w-5xl pb-24 md:pb-16">
-        <div className="text-center mb-12 sr sr-up in">
-          <span className="chip-p inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wider mb-4">
-            AI POWERED
-          </span>
-          <h1 className="text-3xl md:text-5xl font-extrabold font-serif mb-4 text-[var(--ls-text)]">
-            AI Document Analysis
-          </h1>
-          <p className="text-[var(--ls-text2)] max-w-2xl mx-auto">
-            Upload your legal contracts, agreements, or any legal document. Our AI will scan it for missing clauses, risky terms, and potential legal issues.
-          </p>
-        </div>
 
-        <div className="grid md:grid-cols-1 gap-8 mb-12">
-          {/* Upload Section */}
-          <div className="bg-[var(--ls-card)] rounded-2xl border border-[var(--ls-border)] p-8 shadow-sm text-center">
-            <div className="max-w-md mx-auto">
-              {!file ? (
-                <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-[var(--ls-border)] border-dashed rounded-xl cursor-pointer bg-[var(--bg3)] hover:bg-[var(--bg2)] transition-colors">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <UploadCloud className="w-12 h-12 text-[var(--ls-text3)] mb-4" />
-                    <p className="mb-2 text-sm text-[var(--ls-text2)]">
-                      <span className="font-semibold text-primary">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs text-[var(--ls-text3)]">PDF or DOCX (Max 10MB)</p>
-                  </div>
-                  <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleFileChange} />
-                </label>
-              ) : (
-                <div className="flex flex-col items-center justify-center p-8 border border-[var(--ls-border)] rounded-xl bg-[var(--bg3)]">
-                  <FileText className="w-16 h-16 text-primary mb-4" />
-                  <p className="font-medium text-[var(--ls-text)] mb-1 truncate max-w-full">{file.name}</p>
-                  <p className="text-xs text-[var(--ls-text3)] mb-6">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={() => { setFile(null); setResult(null); setError(null); }}
-                      className="px-4 py-2 text-sm font-medium border border-[var(--ls-border)] rounded-lg hover:bg-gray-50 transition-colors"
-                      disabled={loading}
-                    >
-                      Change File
-                    </button>
-                    <button 
-                      onClick={handleAnalyze}
-                      disabled={loading}
-                      className="btn-shimmer px-6 py-2 text-sm font-bold text-white rounded-lg shadow-md transition-all flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, #22c55e, #15803d)" }}
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        "Analyze Document"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+      <section style={{ padding: "72px clamp(16px,5vw,80px)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 14px",
+              borderRadius: 12,
+              border: "1px solid rgba(22,163,74,.18)",
+              background: "var(--ls-card)",
+              cursor: "pointer",
+              fontWeight: 800,
+              fontSize: ".85rem",
+              color: "var(--ls-text)",
+              fontFamily: "'Plus Jakarta Sans',sans-serif",
+            }}
+          >
+            <ArrowLeft style={{ width: 16, height: 16 }} /> Back
+          </button>
 
-            {error && (
-              <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200 flex items-center gap-2 max-w-md mx-auto text-left">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                <p>{error}</p>
-              </div>
-            )}
-          </div>
-        </div>
+          <div style={{ height: 18 }} />
 
-        {/* Results Section */}
-        {loading && (
-          <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-50 mb-6 relative">
-              <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <ShieldAlert className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-bold font-serif mb-2">Analyzing your document...</h3>
-            <p className="text-[var(--ls-text2)]">Our AI is reading through clauses and checking for risks.</p>
-          </div>
-        )}
+          <Card>
+            <SectionTitle
+              icon={ShieldAlert}
+              title="AI Document Analysis"
+              subtitle="Upload a PDF/DOCX. We'll flag missing clauses, risky terms, and provide a color‑coded risk score."
+            />
 
-        {result && !loading && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            {/* Score Card */}
-            <div className={`p-8 rounded-2xl border ${getRiskColor(result.riskScore)} flex flex-col md:flex-row items-center gap-8 shadow-sm`}>
-              <div className="relative w-32 h-32 flex-shrink-0">
-                <svg viewBox="0 0 36 36" className="w-32 h-32">
-                  <path
-                    className="text-gray-200/50"
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  />
-                  <path
-                    style={{ color: getRiskIndicatorColor(result.riskScore) }}
-                    strokeDasharray={`${result.riskScore}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-extrabold leading-none">{result.riskScore}</span>
-                  <span className="text-xs font-bold uppercase tracking-wider opacity-80 mt-1">/ 100</span>
-                </div>
-              </div>
-              
+            <div style={{ display: "grid", gridTemplateColumns: "1.1fr .9fr", gap: 16, alignItems: "end" }} className="grid md:grid-cols-2">
               <div>
-                <h3 className="text-2xl font-bold font-serif mb-2">
-                  {result.riskLevel} Risk Detected
-                </h3>
-                <p className="opacity-90">
-                  {result.riskScore < 30 ? "This document looks well-drafted and standard. Very few concerns found." : 
-                   result.riskScore < 70 ? "There are some missing clauses or slightly risky terms you should review." : 
-                   "This document has significant risks or missing important protections. We strongly advise a lawyer's review."}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Risky Terms */}
-              <div className="bg-[var(--ls-card)] border border-[var(--ls-border)] rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold flex items-center gap-2 mb-6">
-                  <FileWarning className="w-5 h-5 text-amber-500" />
-                  Risky Terms Found
-                </h3>
-                {result.riskyTerms && result.riskyTerms.length > 0 ? (
-                  <div className="space-y-4">
-                    {result.riskyTerms.map((term, idx) => (
-                      <div key={idx} className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                        <p className="font-semibold text-amber-900 mb-2">"{term.term}"</p>
-                        <p className="text-sm text-amber-800 mb-2"><span className="font-semibold">Reason:</span> {term.reason}</p>
-                        <p className="text-sm text-green-700 bg-green-50 p-2 rounded border border-green-100"><span className="font-semibold">Suggestion:</span> {term.suggestion}</p>
-                      </div>
-                    ))}
+                <label style={{ display: "block", fontWeight: 800, fontSize: ".85rem", marginBottom: 8, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  Document (PDF or DOCX)
+                </label>
+                <div
+                  style={{
+                    border: "1px dashed rgba(22,163,74,.35)",
+                    borderRadius: 16,
+                    padding: 14,
+                    background: "rgba(34,197,94,.05)",
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={(e) => onPick(e.target.files?.[0])}
+                    style={{ width: "100%" }}
+                  />
+                  <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, color: "var(--ls-text2)", fontSize: ".82rem" }}>
+                    <FileText style={{ width: 16, height: 16 }} />
+                    <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                      {file ? `${file.name} (${Math.round(file.size / 1024)} KB)` : "No file selected"}
+                    </span>
                   </div>
-                ) : (
-                  <p className="text-[var(--ls-text2)] text-sm flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" /> No highly risky terms detected.
-                  </p>
-                )}
+                </div>
               </div>
 
-              {/* Missing Clauses */}
-              <div className="bg-[var(--ls-card)] border border-[var(--ls-border)] rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold flex items-center gap-2 mb-6">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
-                  Missing Clauses
-                </h3>
-                {result.missingClauses && result.missingClauses.length > 0 ? (
-                  <ul className="space-y-3">
-                    {result.missingClauses.map((clause, idx) => (
-                      <li key={idx} className="flex gap-3 text-sm text-[var(--ls-text2)] items-start">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></span>
-                        {clause}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-[var(--ls-text2)] text-sm flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" /> Document seems to have all standard clauses.
-                  </p>
-                )}
+              <div>
+                <label style={{ display: "block", fontWeight: 800, fontSize: ".85rem", marginBottom: 8, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  Document type
+                </label>
+                <select
+                  value={documentType}
+                  onChange={(e) => setDocumentType(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 12px",
+                    borderRadius: 14,
+                    border: "1px solid rgba(0,0,0,.10)",
+                    background: "var(--ls-card)",
+                    color: "var(--ls-text)",
+                    fontWeight: 700,
+                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                    outline: "none",
+                  }}
+                >
+                  {DOC_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={onAnalyze}
+                  disabled={!canAnalyze}
+                  style={{
+                    marginTop: 12,
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    border: "none",
+                    background: canAnalyze ? "linear-gradient(135deg,#22c55e,#15803d)" : "rgba(34,197,94,.30)",
+                    color: "#fff",
+                    fontWeight: 900,
+                    cursor: canAnalyze ? "pointer" : "not-allowed",
+                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                    boxShadow: canAnalyze ? "0 8px 28px var(--green-glow)" : "none",
+                  }}
+                >
+                  {loading ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                      <Loader2 className="animate-spin" style={{ width: 18, height: 18 }} /> Analyzing…
+                    </span>
+                  ) : (
+                    "Analyze Document"
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* General Suggestions */}
-            {result.generalSuggestions && result.generalSuggestions.length > 0 && (
-              <div className="bg-[var(--ls-card)] border border-[var(--ls-border)] rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold mb-4">General Suggestions</h3>
-                <ul className="grid sm:grid-cols-2 gap-3">
-                  {result.generalSuggestions.map((suggestion, idx) => (
-                    <li key={idx} className="flex gap-2 text-sm text-[var(--ls-text2)] bg-[var(--bg3)] p-3 rounded-lg border border-[var(--ls-border)]">
-                      <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                      <span>{suggestion}</span>
+            {error ? (
+              <div style={{ marginTop: 16, padding: 12, borderRadius: 14, border: "1px solid rgba(239,68,68,.25)", background: "rgba(239,68,68,.08)", color: "#b91c1c", fontWeight: 800, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                {error}
+              </div>
+            ) : null}
+          </Card>
+
+          {result ? (
+            <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              <Card>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: "1.25rem" }}>
+                      Risk score: {result.riskScore}/100
+                    </div>
+                    <div style={{ marginTop: 4, color: "var(--ls-text2)", fontSize: ".85rem", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                      Detected type: <b>{String(result.detectedType || "unknown")}</b> {result.aiUsed ? "(AI)" : "(rules)"}
+                      {result.wasTruncated ? " • Note: long document truncated for analysis" : ""}
+                    </div>
+                  </div>
+                  <Pill tone={result.riskLevel || "low"}>Risk: {String(result.riskLevel || "low").toUpperCase()}</Pill>
+                </div>
+              </Card>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="grid md:grid-cols-2">
+                <Card>
+                  <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: "1.1rem", marginBottom: 10 }}>
+                    Missing clauses ({result.missingClauses?.length || 0})
+                  </div>
+                  {result.missingClauses?.length ? (
+                    <div style={{ display: "grid", gap: 10 }}>
+                      {result.missingClauses.slice(0, 10).map((c, idx) => (
+                        <div key={`${c.clause}-${idx}`} style={{ padding: 12, borderRadius: 14, border: "1px solid rgba(0,0,0,.08)", background: "rgba(255,255,255,.65)" }}>
+                          <div style={{ fontWeight: 900, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{c.clause}</div>
+                          <div style={{ marginTop: 6, color: "var(--ls-text2)", fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                            {c.reason}
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                            <b>Suggestion:</b> {c.suggestion}
+                          </div>
+                        </div>
+                      ))}
+                      {result.missingClauses.length > 10 ? (
+                        <div style={{ color: "var(--ls-text2)", fontSize: ".82rem", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                          Showing first 10 items.
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div style={{ color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                      No obvious missing clauses detected.
+                    </div>
+                  )}
+                </Card>
+
+                <Card>
+                  <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: "1.1rem", marginBottom: 10 }}>
+                    Risky terms ({result.riskyTerms?.length || 0})
+                  </div>
+                  {result.riskyTerms?.length ? (
+                    <div style={{ display: "grid", gap: 10 }}>
+                      {result.riskyTerms.slice(0, 10).map((t, idx) => (
+                        <div key={`${t.term}-${idx}`} style={{ padding: 12, borderRadius: 14, border: "1px solid rgba(0,0,0,.08)", background: "rgba(255,255,255,.65)" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                            <div style={{ fontWeight: 900, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{t.term}</div>
+                            <Pill tone={t.severity === "high" ? "high" : t.severity === "medium" ? "medium" : "low"}>
+                              {String(t.severity || "low").toUpperCase()}
+                            </Pill>
+                          </div>
+                          {t.excerpt ? (
+                            <pre
+                              style={{
+                                marginTop: 10,
+                                padding: 10,
+                                borderRadius: 12,
+                                border: "1px solid rgba(0,0,0,.07)",
+                                background: "rgba(0,0,0,.03)",
+                                whiteSpace: "pre-wrap",
+                                fontSize: ".78rem",
+                                lineHeight: 1.55,
+                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+                                color: "var(--ls-text)",
+                              }}
+                            >
+                              {t.excerpt}
+                            </pre>
+                          ) : null}
+                          <div style={{ marginTop: 10, color: "var(--ls-text2)", fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                            {t.whyRisky}
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                            <b>Suggestion:</b> {t.suggestion}
+                          </div>
+                        </div>
+                      ))}
+                      {result.riskyTerms.length > 10 ? (
+                        <div style={{ color: "var(--ls-text2)", fontSize: ".82rem", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                          Showing first 10 items.
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div style={{ color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                      No risky wording detected by the current checks.
+                    </div>
+                  )}
+                </Card>
+              </div>
+
+              <Card>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: "1.1rem", marginBottom: 10 }}>
+                  Suggestions
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8, color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  {(result.suggestions || []).slice(0, 12).map((s, i) => (
+                    <li key={i} style={{ lineHeight: 1.6 }}>
+                      {s}
                     </li>
                   ))}
                 </ul>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+              </Card>
+            </div>
+          ) : null}
+        </div>
+      </section>
 
       <Footer />
     </div>

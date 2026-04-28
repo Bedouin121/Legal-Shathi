@@ -6,6 +6,7 @@ const FEATURES = [
   { icon: "⚖️", title: "Bangladesh Law Database", desc: "Access 500+ acts, ordinances, and regulations — fully searchable in Bengali and English.", chip: "chip-g" },
   { icon: "🤖", title: "AI Legal Assistant", desc: "Ask complex legal questions and get clear, cited answers powered by GPT-4o.", chip: "chip-b" },
   { icon: "📄", title: "Smart Document Generator", desc: "Generate court-ready documents from 48+ templates with AI auto-fill.", chip: "chip-a" },
+  { icon: "🛡️", title: "AI Document Analysis", desc: "Upload PDF/DOCX files. Detect missing clauses, risky terms, and get a color-coded risk score with suggested fixes.", chip: "chip-t" },
   { icon: "✍️", title: "Digital E-Signature", desc: "Legally sign and witness documents online — fully compliant with BD regulations.", chip: "chip-p" },
   { icon: "📊", title: "Analytics Dashboard", desc: "Track document usage, popular templates, and platform-wide trends at a glance.", chip: "chip-t" },
   { icon: "🔐", title: "Secure & Private", desc: "Bank-grade encryption, JWT authentication, and zero third-party data sharing.", chip: "chip-r" },

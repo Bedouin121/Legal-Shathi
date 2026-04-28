@@ -169,6 +169,16 @@ export const chatAPI = {
   deleteSession: (id) => apiFetch(`/chat/history/${id}`, { method: "DELETE" }),
 };
 
+export const judgmentAPI = {
+  summarize: (judgment) =>
+    apiFetch("/chat/guest", {
+      method: "POST",
+      body: JSON.stringify({
+        message: `Summarize this Bangladesh Supreme Court judgment in 4-5 short bullet points, highlighting key facts, legal issues, court decision, and precedents. Use clear language and mention that it is a Supreme Court judgment from Bangladesh. Judgment title: ${judgment.title}. Citation: ${judgment.citation}. Summary: ${judgment.summaryEn}`,
+      }),
+    }),
+};
+
 // ==================== Analytics ====================
 export const analyticsAPI = {
   get: () => apiFetch("/analytics"),
@@ -237,6 +247,25 @@ export const documentAPI = {
       method: "POST",
       body: JSON.stringify({ templateTitle, formData, language }),
     }),
+
+  analyze: async (file, documentType = "auto") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("documentType", documentType);
+    const token = getToken();
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/documents/analyze`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Analysis failed");
+    return data;
+  },
 
   generateStream: async (templateTitle, formData, language = "english", onChunk) => {
     const res = await fetch(`${API_BASE}/documents/generate/stream`, {
