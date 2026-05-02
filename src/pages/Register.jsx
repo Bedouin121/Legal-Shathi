@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "@/services/api";
 import { Scale, Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
+import AvatarUpload from "@/components/AvatarUpload";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -10,7 +11,22 @@ const Register = () => {
   const [confirmPass, setConfirmPass] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // avatar state — file to upload, preview URL to display
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
   const navigate = useNavigate();
+
+  const handleAvatarChange = (file, previewUrl) => {
+    setAvatarFile(file);
+    setAvatarPreview(previewUrl);
+  };
+
+  const handleAvatarClear = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,8 +43,22 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await authAPI.register({ name, email, password });
-      // Redirect to OTP verification page
+      // 1. Register the account
+      const data = await authAPI.register({ name, email, password });
+
+      // 2. If the user picked a photo, upload it right away using the token
+      //    we just received (before OTP verification, the token is valid for uploads)
+      if (avatarFile && data.token) {
+        try {
+          localStorage.setItem("token", data.token);
+          await authAPI.uploadProfilePicture(avatarFile);
+        } catch (uploadErr) {
+          // Non-fatal — user can always add it later from the profile dropdown
+          console.warn("Profile picture upload failed:", uploadErr?.message);
+        }
+      }
+
+      // 3. Redirect to OTP verification
       navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err.message);
@@ -38,7 +68,7 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center">
@@ -58,6 +88,17 @@ const Register = () => {
           onSubmit={handleSubmit}
           className="rounded-2xl border border-border bg-card p-6 shadow-xl"
         >
+          {/* ── Avatar picker ── */}
+          <div className="mb-6 flex justify-center">
+            <AvatarUpload
+              value={avatarPreview}
+              onChange={handleAvatarChange}
+              onClear={handleAvatarClear}
+              disabled={loading}
+              size={88}
+            />
+          </div>
+
           {error && (
             <div className="mb-4 rounded-lg bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
               {error}
