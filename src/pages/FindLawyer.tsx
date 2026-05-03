@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Scale, Building2, Search, Phone, Mail, Copy, Check, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import L from "leaflet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
+// bkoigl is loaded globally via CDN in index.html
+declare const bkoigl: any;
 
 export type Lawyer = {
   name: string;
@@ -218,66 +220,108 @@ export default function FindLawyer() {
 
   // Map setup
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const mapInstance = useRef<any>(null);
+  const markersRef = useRef<Map<string, any>>(new Map());
+  const popupsRef = useRef<Map<string, any>>(new Map());
+  const [mapReady, setMapReady] = useState(false);
+
+  // Key is base64-encoded for light obfuscation — not a security boundary
+  const BARIKOI_KEY = atob("YmtvaV82ZWYyNDJhNDlhOTYwNTg3ODA5NTczNTVkZmEyNjZiMjU4YmZmODNiMWE1NzI2MmY3Y2M0YzBjMDM1ZmVmNTgw");
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
-    const map = L.map(mapRef.current, {
-      center: [23.7600, 90.4060],
-      zoom: 12,
-      scrollWheelZoom: true,
-    });
-    // CARTO Voyager — labels in English (Latin script)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      subdomains: "abcd",
-      maxZoom: 19,
-    }).addTo(map);
-    mapInstance.current = map;
-  }, []);
 
-  // Update markers on filter change
+    const map = new bkoigl.Map({
+      container: mapRef.current,
+      style: "https://map.barikoi.com/styles/barikoi-light/style.json",
+      // Barikoi uses [longitude, latitude] order
+      center: [90.4060, 23.7600],
+      zoom: 11,
+      accessToken: BARIKOI_KEY,
+    });
+
+    // Add zoom + compass controls
+    map.addControl(new bkoigl.NavigationControl(), "top-right");
+
+    mapInstance.current = map;
+
+    // Only allow markers to be added once the style has fully loaded
+    map.on("load", () => {
+      console.log("Barikoi map loaded");
+      setMapReady(true);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      map.remove();
+      mapInstance.current = null;
+      setMapReady(false);
+    };
+  }, [BARIKOI_KEY]);
+
+  // Update markers whenever the filtered list changes — but only after map is ready
   useEffect(() => {
     const map = mapInstance.current;
-    if (!map) return;
+    if (!map || !mapReady) {
+      console.log("Waiting for map...", { map: !!map, mapReady });
+      return;
+    }
 
+    console.log("Adding markers for", filtered.length, "lawyers");
+
+    // Remove existing markers and popups
     markersRef.current.forEach((m) => m.remove());
     markersRef.current.clear();
+    popupsRef.current.clear();
 
     filtered.forEach((l, i) => {
-      const icon = L.divIcon({
-        className: "",
-        html: `<div class="lawyer-pin"><span>${i + 1}</span></div>`,
-        iconSize: [30, 42],
-        iconAnchor: [15, 42],
-      });
-      const marker = L.marker(l.coords, { icon }).addTo(map);
-      marker.bindPopup(
-        `<div style="font-family:var(--font-body);min-width:200px">
-          <div style="font-family:var(--font-display);font-weight:700;font-size:15px;margin-bottom:4px">${l.name}</div>
-          <div style="color:#475569;font-size:12px;margin-bottom:4px">${l.location}</div>
-          ${l.phone ? `<div style="color:#475569;font-size:12px;margin-bottom:2px">📞 ${l.phone}</div>` : ''}
-          ${l.email ? `<div style="color:#475569;font-size:12px">✉️ ${l.email}</div>` : ''}
-        </div>`
-      );
-      marker.on("click", () => setActiveName(l.name));
+      // Custom numbered pin element
+      const el = document.createElement("div");
+      el.className = "lawyer-pin";
+      el.innerHTML = `<span>${i + 1}</span>`;
+
+      const popup = new bkoigl.Popup({ offset: 25, closeButton: true })
+        .setHTML(
+          `<div style="font-family:system-ui,sans-serif;min-width:200px;padding:4px 2px">
+            <div style="font-weight:700;font-size:15px;margin-bottom:4px">${l.name}</div>
+            <div style="color:#475569;font-size:12px;margin-bottom:4px">${l.location}</div>
+            ${l.phone ? `<div style="color:#475569;font-size:12px;margin-bottom:2px">📞 ${l.phone}</div>` : ""}
+            ${l.email ? `<div style="color:#475569;font-size:12px">✉️ ${l.email}</div>` : ""}
+          </div>`
+        );
+
+      // Barikoi coords: [longitude, latitude]
+      const marker = new bkoigl.Marker({ element: el })
+        .setLngLat([l.coords[1], l.coords[0]])
+        .setPopup(popup)
+        .addTo(map);
+
+      marker.getElement().addEventListener("click", () => setActiveName(l.name));
+
       markersRef.current.set(l.name, marker);
+      popupsRef.current.set(l.name, popup);
     });
 
+    // Fit map to show all filtered markers
     if (filtered.length > 0) {
-      const bounds = L.latLngBounds(filtered.map((l) => l.coords));
-      map.fitBounds(bounds.pad(0.25), { animate: true, maxZoom: 14 });
+      const lngs = filtered.map((l) => l.coords[1]);
+      const lats = filtered.map((l) => l.coords[0]);
+      const bounds: any = [
+        [Math.min(...lngs), Math.min(...lats)], // SW
+        [Math.max(...lngs), Math.max(...lats)], // NE
+      ];
+      map.fitBounds(bounds, { padding: 60, maxZoom: 14, animate: true });
     }
-  }, [filtered]);
+  }, [filtered, mapReady]);
 
   const focusLawyer = (l: Lawyer) => {
     setActiveName(l.name);
     const map = mapInstance.current;
     const marker = markersRef.current.get(l.name);
     if (map && marker) {
-      map.flyTo(l.coords, 15, { duration: 0.6 });
-      marker.openPopup();
+      // Barikoi flyTo uses {center: [lng, lat]}
+      map.flyTo({ center: [l.coords[1], l.coords[0]], zoom: 15, duration: 600 });
+      marker.togglePopup();
     }
   };
 
