@@ -8,6 +8,46 @@ import ProfileDropdown from "@/components/ProfileDropdown";
 const Navbar = ({ searchQuery, onSearchChange }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+<<<<<<< Updated upstream
+=======
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dark, setDark] = useState(() => localStorage.getItem("ls-dark") === "1");
+
+  const isLanding = location.pathname === "/";
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (dark) {
+      html.dataset.theme = "dark";
+      html.classList.add("dark");
+    } else {
+      html.dataset.theme = "light";
+      html.classList.remove("dark");
+    }
+    localStorage.setItem("ls-dark", dark ? "1" : "0");
+  }, [dark]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollTo = (path) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
+
+  const navLinks = [
+    { label: "Features", path: "/features" },
+    { label: "Legal Resources", path: "/legal-resources" },
+    { label: "Templates", path: "/templates" },
+    { label: "AI Chat", path: "/chat" },
+    { label: "E-Signature", path: "/esignature" },
+    { label: "Analytics", path: "/analytics-dashboard" },
+  ];
+>>>>>>> Stashed changes
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-xl">

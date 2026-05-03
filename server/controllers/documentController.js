@@ -1,5 +1,14 @@
 import OpenAI from "openai";
 import { sendEmail } from "../utils/emailService.js";
+<<<<<<< Updated upstream
+=======
+import { sendSignatureConfirmationEmail } from "../utils/emailService.js";
+import { logActivity } from "../utils/logActivity.js";
+import crypto from "crypto";
+import fs from "fs";
+import QRCode from "qrcode";
+import Document from "../models/Document.js";
+>>>>>>> Stashed changes
 
 let openai = null;
 const getOpenAI = () => {
@@ -267,6 +276,7 @@ export const generateDocument = async (req, res, next) => {
 
     const generatedAt = new Date().toISOString();
 
+<<<<<<< Updated upstream
     // Optional notification email: either from authenticated user or explicit notifyEmail
     const notifyEmail = req.body.notifyEmail || req.user?.email;
     console.log("[DocGen] Request user:", req.user);
@@ -274,11 +284,33 @@ export const generateDocument = async (req, res, next) => {
     
     // Use authenticated user's email - NO fallback
     const userEmail = notifyEmail;
+=======
+    // Log document generation activity
+    logActivity(req.user?.id, "document_generated", { templateTitle, language });
+
+    // Save document to database with signing token
+    const savedDocument = await Document.create({
+      title: templateTitle,
+      content: document,
+      templateTitle,
+      formData,
+      language,
+      user: req.user._id,
+      status: 'pending_signature'
+    });
+
+    // Get user email for notification
+    const userEmail = req.user?.email || req.body.notifyEmail;
+>>>>>>> Stashed changes
     console.log("[DocGen] Final email to send:", userEmail);
     
     if (userEmail) {
       try {
+<<<<<<< Updated upstream
         const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
+=======
+        const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/sign/${savedDocument._id}/${savedDocument.signToken}`;
+>>>>>>> Stashed changes
         console.log("[DocGen] Sending email to:", userEmail);
         console.log("[DocGen] Document title:", templateTitle);
         console.log("[DocGen] Signing URL:", signUrl);
@@ -343,9 +375,13 @@ export const generateDocument = async (req, res, next) => {
     }
 
     res.json({
-      document,
+      document: savedDocument,
       templateTitle,
       generatedAt,
+<<<<<<< Updated upstream
+=======
+      signUrl: `${process.env.CLIENT_URL}/sign/${savedDocument._id}/${savedDocument.signToken}`
+>>>>>>> Stashed changes
     });
   } catch (error) {
     if (error?.status === 429) {
@@ -423,6 +459,20 @@ export const generateDocumentStream = async (req, res) => {
     console.log("[DocGen Stream] Request user:", req.user);
     console.log("[DocGen Stream] User email from request:", notifyEmail);
     
+<<<<<<< Updated upstream
+=======
+    // Save document to database with signing token
+    const savedDocument = await Document.create({
+      title: templateTitle,
+      content: fullDocument,
+      templateTitle,
+      formData,
+      language,
+      user: req.user._id,
+      status: 'pending_signature'
+    });
+    
+>>>>>>> Stashed changes
     // Use authenticated user's email - NO fallback
     const userEmail = notifyEmail;
     console.log("[DocGen Stream] Final email to send:", userEmail);
@@ -430,7 +480,11 @@ export const generateDocumentStream = async (req, res) => {
     if (userEmail) {
       (async () => {
         try {
+<<<<<<< Updated upstream
           const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
+=======
+          const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/sign/${savedDocument._id}/${savedDocument.signToken}`;
+>>>>>>> Stashed changes
           console.log("[DocGen Stream] Sending email to:", userEmail);
           console.log("[DocGen Stream] Document title:", templateTitle);
           console.log("[DocGen Stream] Signing URL:", signUrl);
@@ -485,15 +539,27 @@ export const generateDocumentStream = async (req, res) => {
             `,
           });
           
+<<<<<<< Updated upstream
           console.log("✅ [Combined Email] Document generation + signature request email sent successfully (stream) to:", userEmail);
         } catch (err) {
           console.warn("❌ [Docs] Failed to send combined email (stream)", err?.message);
+=======
+          console.log("✅ [Combined Email] Document generation + signature request email sent successfully to:", userEmail);
+        } catch (err) {
+          console.warn("❌ [Docs] Failed to send combined email", err?.message);
+>>>>>>> Stashed changes
           console.warn("❌ [Docs] Error details:", err);
         }
       })();
     } else {
       console.log("❌ [DocGen Stream] No user email found - skipping email notification");
     }
+<<<<<<< Updated upstream
+=======
+
+    // Log document generation activity
+    logActivity(req.user?.id, "document_generated", { templateTitle, language });
+>>>>>>> Stashed changes
   } catch (error) {
     console.error("Doc stream error:", error);
     if (!res.headersSent) {
@@ -504,5 +570,258 @@ export const generateDocumentStream = async (req, res) => {
     }
     res.write(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
     res.end();
+  }
+};
+
+// @desc    Sign a document
+// @route   POST /api/documents/:documentId/sign
+export const signDocument = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+    const { signerName } = req.body;
+
+    if (!signerName || signerName.trim().length === 0) {
+      return res.status(400).json({ message: "Signer name is required" });
+    }
+
+    // Find document and validate token
+    const document = await Document.findById(documentId).populate('user');
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (document.signTokenUsed) {
+      return res.status(400).json({ message: "This signing link has already been used" });
+    }
+
+    // Ensure user data is available
+    const user = document.user;
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Capture signing details
+    const timestamp = new Date().toISOString();
+    
+    // Get real client IP address (handle IPv4/IPv6 and proxy headers)
+    const getClientIP = (req) => {
+      const forwarded = req.headers['x-forwarded-for'];
+      const realIP = req.headers['x-real-ip'];
+      const clientIP = req.headers['x-client-ip'];
+      
+      // Check for forwarded IP addresses (comma-separated)
+      if (forwarded) {
+        const ips = forwarded.split(',').map(ip => ip.trim());
+        return ips[0]; // Return the first (original) IP
+      }
+      
+      // Check for real IP header
+      if (realIP) {
+        return realIP;
+      }
+      
+      // Check for client IP header
+      if (clientIP) {
+        return clientIP;
+      }
+      
+      // Fall back to socket address
+      return req.socket.remoteAddress;
+    };
+    
+    const ipAddress = getClientIP(req);
+    
+    // Convert IPv6 localhost (::1) to IPv4 localhost for consistency
+    const normalizedIP = ipAddress === '::1' ? '127.0.0.1' : ipAddress;
+
+    // Generate SHA-256 hash
+    const hashString = `${documentId}${signerName}${timestamp}${normalizedIP}`;
+    const sha256Hash = crypto.createHash('sha256').update(hashString).digest('hex');
+
+    // Generate QR code
+    let qrFilePath = null;
+    let qrFileName = null;
+    try {
+      // Create local verification URL (no ngrok dependency)
+      const verificationUrl = `http://localhost:1630/api/signature/verify/${document._id}`;
+      
+      console.log('🔍 Verification URL:', verificationUrl);
+      
+      // Generate unique filename for QR code
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 15);
+      qrFileName = `qr-${document._id}-${timestamp}-${randomId}.png`;
+      qrFilePath = `/tmp/${qrFileName}`;
+      
+      // Generate QR code as PNG file
+      await QRCode.toFile(qrFilePath, verificationUrl, {
+        type: 'png',
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
+      
+      console.log('🔍 QR Code file created:', qrFilePath);
+      console.log("✅ QR Code generated successfully as file");
+    } catch (err) {
+      console.error("❌ QR Code generation failed:", err);
+      qrFilePath = null;
+      qrFileName = null;
+    }
+
+    // Save signature
+    const signature = {
+      signerName: signerName.trim(),
+      timestamp: new Date(timestamp),
+      ipAddress: normalizedIP,
+      sha256Hash,
+      qrCodeDataUrl: qrFilePath // Store file path instead of Base64
+    };
+
+    document.signatures.push(signature);
+    document.status = 'signed';
+    document.signTokenUsed = true;
+    document.signedAt = new Date(timestamp);
+    await document.save();
+
+    // Send confirmation email
+    try {
+      // Extract user from document
+      const user = document.user;
+      const userName = user?.name || "User";
+      const userEmail = user?.email || "noreply@example.com";
+      
+      await sendSignatureConfirmationEmail({
+        to: userEmail,
+        userName: userName,
+        documentTitle: document.title,
+        documentId: document._id.toString(),
+        signerName,
+        timestamp,
+        ipAddress: normalizedIP,
+        sha256Hash,
+        qrFilePath,
+        qrFileName
+      });
+      
+      console.log("✅ Signature confirmation email sent successfully with CID QR attachment");
+      
+      // Clean up temporary QR file after email is sent
+      if (qrFilePath && fs.existsSync(qrFilePath)) {
+        try {
+          fs.unlinkSync(qrFilePath);
+          console.log('🧹 Temporary QR file cleaned up:', qrFilePath);
+        } catch (cleanupError) {
+          console.warn('⚠️ Failed to cleanup temporary QR file:', cleanupError.message);
+        }
+      }
+    } catch (err) {
+      console.warn("❌ Failed to send signature confirmation email:", err);
+      
+      // Clean up temporary QR file even if email fails
+      if (qrFilePath && fs.existsSync(qrFilePath)) {
+        try {
+          fs.unlinkSync(qrFilePath);
+          console.log('🧹 Temporary QR file cleaned up after email error:', qrFilePath);
+        } catch (cleanupError) {
+          console.warn('⚠️ Failed to cleanup temporary QR file:', cleanupError.message);
+        }
+      }
+    }
+
+    // Send webhook notification
+    try {
+      const webhookPayload = {
+        event: 'signature_completed',
+        data: {
+          documentTitle: document.title,
+          documentId: document._id.toString(),
+          signerName,
+          timestamp,
+          ipAddress,
+          sha256Hash,
+          qrCodeDataUrl: qrFilePath,
+          userEmail: user.email,
+          userName: user.name
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const webhookUrl = process.env.WEBHOOK_URL;
+      if (webhookUrl) {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Legal-Shathi-Webhook-Client/1.0'
+          },
+          body: JSON.stringify(webhookPayload)
+        });
+        
+        if (response.ok) {
+          console.log("✅ Webhook notification sent successfully");
+        } else {
+          console.warn("⚠️ Webhook notification failed:", response.status, response.statusText);
+        }
+      } else {
+        console.log("ℹ️ Webhook URL not configured, skipping webhook notification");
+      }
+    } catch (err) {
+      console.warn("❌ Failed to send webhook notification:", err);
+    }
+
+    res.status(200).json({
+      message: "Document signed successfully",
+      document: {
+        id: document._id,
+        title: document.title,
+        status: document.status,
+        signedAt: document.signedAt,
+        signature: signature
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get document signing page details
+// @route   GET /api/documents/:documentId/sign/:token
+export const getSigningPage = async (req, res, next) => {
+  try {
+    const { documentId, token } = req.params;
+
+    // Find document and validate token
+    const document = await Document.findById(documentId).populate('user');
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (document.signToken !== token) {
+      return res.status(400).json({ message: "Invalid signing link" });
+    }
+
+    if (document.signTokenUsed) {
+      return res.status(400).json({ message: "This signing link has already been used" });
+    }
+
+    res.json({
+      document: {
+        id: document._id,
+        title: document.title,
+        templateTitle: document.templateTitle,
+        content: document.content,
+        generatedAt: document.generatedAt
+      },
+      user: {
+        name: document.user.name,
+        email: document.user.email
+      }
+    });
+  } catch (error) {
+    next(error);
   }
 };

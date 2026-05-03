@@ -65,15 +65,30 @@ const AnalyticsDashboard = () => {
   };
 
   const apiUsageData = {
+<<<<<<< Updated upstream
     labels: (analytics?.apiUsage ?? []).map((u) => u.month),
+=======
+    labels: (analytics?.apiUsage ?? []).map((u) => u.date),
+>>>>>>> Stashed changes
     datasets: [
       {
         label: "API Calls",
         data: (analytics?.apiUsage ?? []).map((u) => u.count),
+<<<<<<< Updated upstream
         fill: false,
         borderColor: "#6366f1",
         backgroundColor: "#6366f1",
+=======
+        fill: true,
+        borderColor: "#6366f1",
+        backgroundColor: "rgba(99, 102, 241, 0.1)",
+>>>>>>> Stashed changes
         tension: 0.4,
+        pointBackgroundColor: "#6366f1",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
       },
     ],
   };
@@ -134,7 +149,57 @@ const AnalyticsDashboard = () => {
             </Card>
             <Card className="p-6">
               <h2 className="mb-2 font-semibold">API Usage (Monthly)</h2>
+<<<<<<< Updated upstream
               <Line data={apiUsageData} />
+=======
+              <Line 
+                data={apiUsageData} 
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: 'top',
+                    },
+                    tooltip: {
+                      mode: 'index',
+                      intersect: false,
+                      callbacks: {
+                        title: function(context) {
+                          return `Period: ${context[0].label}`;
+                        },
+                        label: function(context) {
+                          return `API Calls: ${context.parsed.y}`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      display: true,
+                      title: {
+                        display: true,
+                        text: 'Month'
+                      },
+                      grid: {
+                        display: false
+                      }
+                    },
+                    y: {
+                      display: true,
+                      title: {
+                        display: true,
+                        text: 'Number of API Calls'
+                      },
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1
+                      }
+                    }
+                  }
+                }}
+              />
+>>>>>>> Stashed changes
             </Card>
           </div>
         </>

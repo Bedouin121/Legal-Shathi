@@ -2,8 +2,15 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import errorHandler from "./middleware/errorHandler.js";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Route imports
 import authRoutes from "./routes/authRoutes.js";
@@ -14,6 +21,11 @@ import documentRoutes from "./routes/documentRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+<<<<<<< Updated upstream
+=======
+import verificationRoutes from "./routes/verificationRoutes.js";
+import webhookRoutes from "./routes/webhookRoutes.js";
+>>>>>>> Stashed changes
 
 // Load env vars
 dotenv.config();
@@ -51,6 +63,12 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/notifications", notificationRoutes);
+<<<<<<< Updated upstream
+=======
+app.use("/api", verificationRoutes);
+app.use("/api/webhooks", webhookRoutes);
+app.use("/api/callbacks", webhookRoutes);
+>>>>>>> Stashed changes
 
 // Error handler (must be last)
 app.use(errorHandler);

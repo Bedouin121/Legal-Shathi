@@ -163,6 +163,11 @@ const VerifyOtp = () => {
             Verify Email
           </button>
 
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
           {/* Resend OTP */}
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">

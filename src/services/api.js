@@ -1,4 +1,9 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:1630/api";
+<<<<<<< Updated upstream
+=======
+
+export { API_BASE, apiFetch };
+>>>>>>> Stashed changes
 
 const getToken = () => localStorage.getItem("token");
 
@@ -198,7 +203,28 @@ export const chatAPI = {
   deleteSession: (id) => apiFetch(`/chat/history/${id}`, { method: "DELETE" }),
 };
 
+<<<<<<< Updated upstream
 // ==================== Documents ====================
+=======
+// ==================== Analytics ====================
+export const analyticsAPI = {
+  get: () => apiFetch("/analytics"),
+  getSummary: () => apiFetch("/analytics/summary"),
+};
+
+// ==================== Activity ====================
+export const activityAPI = {
+  get: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return apiFetch(`/activity${query ? `?${query}` : ""}`);
+  },
+
+  exportUrl: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return `${API_BASE}/activity/export${query ? `?${query}` : ""}`;
+  },
+};
+>>>>>>> Stashed changes
 export const documentAPI = {
   getFields: (templateTitle) =>
     apiFetch(`/documents/fields/${encodeURIComponent(templateTitle)}`),
@@ -256,7 +282,21 @@ export const documentAPI = {
   },
 };
 
+<<<<<<< Updated upstream
 // ==================== Analytics ====================
 export const analyticsAPI = {
   getSummary: () => apiFetch("/analytics/summary"),
+=======
+// ==================== Upload ====================
+export const uploadAPI = {
+  uploadProfilePicture: (file) => {
+    const formData = new FormData();
+    formData.append('profilePicture', file);
+    return apiFetch('/auth/upload-profile-picture', {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let browser set Content-Type for FormData
+    });
+  },
+>>>>>>> Stashed changes
 };

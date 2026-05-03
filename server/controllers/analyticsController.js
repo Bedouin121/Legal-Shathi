@@ -1,6 +1,10 @@
 import User from "../models/User.js";
 import Template from "../models/Template.js";
 import ChatHistory from "../models/ChatHistory.js";
+<<<<<<< Updated upstream
+=======
+import ActivityLog from "../models/ActivityLog.js";
+>>>>>>> Stashed changes
 
 // @desc    Get high-level analytics summary for dashboard
 // @route   GET /api/analytics/summary
@@ -13,6 +17,7 @@ export const getAnalyticsSummary = async (req, res, next) => {
       ChatHistory.countDocuments(),
     ]);
 
+<<<<<<< Updated upstream
     // Approximate "generated documents" as total assistant replies across all chats
     const generatedAgg = await ChatHistory.aggregate([
       { $unwind: "$messages" },
@@ -25,12 +30,22 @@ export const getAnalyticsSummary = async (req, res, next) => {
     const favoritesAgg = await User.aggregate([
       { $unwind: "$favorites" },
       { $group: { _id: "$favorites", count: { $sum: 1 } } },
+=======
+    // Count actual document generations from ActivityLog
+    const generatedDocuments = await ActivityLog.countDocuments({ type: "document_generated" });
+
+    // Popular templates based on actual document generation from ActivityLog
+    const documentGenAgg = await ActivityLog.aggregate([
+      { $match: { type: "document_generated" } },
+      { $group: { _id: "$metadata.templateTitle", count: { $sum: 1 } } },
+>>>>>>> Stashed changes
       { $sort: { count: -1 } },
       { $limit: 4 },
     ]);
 
     let popularTemplates = [];
 
+<<<<<<< Updated upstream
     if (favoritesAgg.length > 0) {
       const templateIds = favoritesAgg.map((f) => f._id);
       const templates = await Template.find({ _id: { $in: templateIds } })
@@ -43,6 +58,20 @@ export const getAnalyticsSummary = async (req, res, next) => {
           count: f.count,
         }))
         .filter((t) => t.name !== "Unknown Template");
+=======
+    if (documentGenAgg.length > 0) {
+      const templateTitles = documentGenAgg.map(d => d._id);
+      const templates = await Template.find({ title: { $in: templateTitles } })
+        .select("title")
+        .lean();
+      const titleById = new Map(templates.map((t) => [t.title, t.title]));
+      
+      popularTemplates = documentGenAgg
+        .map((d) => ({
+          name: titleById.get(d._id) || d._id,
+          count: d.count,
+        }));
+>>>>>>> Stashed changes
     }
 
     // Fallback if no favorites data yet
@@ -75,6 +104,7 @@ export const getAnalyticsSummary = async (req, res, next) => {
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     let apiUsage = usageAgg.map((u) => ({
+<<<<<<< Updated upstream
       month: monthNames[(u._id.month ?? 1) - 1] ?? "Unknown",
       count: u.count,
     }));
@@ -87,6 +117,24 @@ export const getAnalyticsSummary = async (req, res, next) => {
         { month: "Mar", count: 0 },
         { month: "Apr", count: 0 },
         { month: "May", count: 0 },
+=======
+      date: `${monthNames[(u._id.month ?? 1) - 1] ?? "Unknown"} ${u._id.year}`,
+      month: monthNames[(u._id.month ?? 1) - 1] ?? "Unknown",
+      year: u._id.year,
+      count: u.count,
+    }));
+
+    // If there is no usage yet, return a simple placeholder series with current year
+    const currentYear = new Date().getFullYear();
+    if (apiUsage.length === 0) {
+      apiUsage = [
+        { date: `Jan ${currentYear}`, month: "Jan", year: currentYear, count: 0 },
+        { date: `Feb ${currentYear}`, month: "Feb", year: currentYear, count: 0 },
+        { date: `Mar ${currentYear}`, month: "Mar", year: currentYear, count: 0 },
+        { date: `Apr ${currentYear}`, month: "Apr", year: currentYear, count: 0 },
+        { date: `May ${currentYear}`, month: "May", year: currentYear, count: 0 },
+        { date: `Jun ${currentYear}`, month: "Jun", year: currentYear, count: 0 },
+>>>>>>> Stashed changes
       ];
     } else if (apiUsage.length > 6) {
       // Limit to last 6 months to keep the chart readable

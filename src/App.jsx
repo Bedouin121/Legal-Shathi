@@ -9,9 +9,20 @@ import Chat from "./pages/Chat";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyOtp from "./pages/VerifyOtp";
+<<<<<<< Updated upstream
 import DocumentSign from "./pages/DocumentSign";
 import NotFound from "./pages/NotFound";
 import TemplateDetail from "./pages/TemplateDetail";
+=======
+import SignDocumentPage from "./pages/SignDocumentPage";
+import SignDocumentSecondPage from "./pages/SignDocumentSecondPage";
+import NotFound from "./pages/NotFound";
+import Templates from "./pages/Templates";
+import TemplateDetail from "./pages/TemplateDetail";
+import Features from "./pages/Features";
+import LegalResources from "./pages/LegalResources";
+import ESignature from "./pages/ESignature";
+>>>>>>> Stashed changes
 import AiChatbot from "./components/AiChatbot";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
@@ -71,7 +82,16 @@ const AppRoutes = () => (
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/verify-otp" element={<VerifyOtp />} />
+<<<<<<< Updated upstream
       <Route path="/template/sign" element={<DocumentSign />} />
+=======
+      <Route path="/features" element={<ProtectedRoute><Features /></ProtectedRoute>} />
+      <Route path="/legal-resources" element={<ProtectedRoute><LegalResources /></ProtectedRoute>} />
+      <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+      <Route path="/esignature" element={<ProtectedRoute><ESignature /></ProtectedRoute>} />
+      <Route path="/sign/:documentId/:token" element={<SignDocumentPage />} />
+      <Route path="/sign-second/:documentId/:token" element={<SignDocumentSecondPage />} />
+>>>>>>> Stashed changes
       <Route path="/template/:id" element={<ProtectedRoute><TemplateDetail /></ProtectedRoute>} />
       <Route path="/analytics-dashboard" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
