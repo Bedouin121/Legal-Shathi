@@ -4,8 +4,14 @@ import { Server } from "socket.io";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import errorHandler from "./middleware/errorHandler.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import authRoutes from "./routes/authRoutes.js";
 import templateRoutes from "./routes/templateRoutes.js";
@@ -18,6 +24,8 @@ import analysisRoutes from "./routes/analysisRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import liveChatRoutes from "./routes/liveChatRoutes.js";
+import verificationRoutes from "./routes/verificationRoutes.js";
+import webhookRoutes from "./routes/webhookRoutes.js";
 import jwt from "jsonwebtoken";
 import User from "./models/User.js";
 import LiveChatSession from "./models/LiveChatSession.js";
@@ -69,6 +77,9 @@ app.use("/api/analysis", analysisRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/live-chat", liveChatRoutes);
+app.use("/api", verificationRoutes);
+app.use("/api/webhooks", webhookRoutes);
+app.use("/api/callbacks", webhookRoutes);
 
 app.use(errorHandler);
 

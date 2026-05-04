@@ -1,7 +1,11 @@
 import OpenAI from "openai";
+import crypto from "crypto";
+import fs from "fs";
+import QRCode from "qrcode";
 import Template from "../models/Template.js";
+import Document from "../models/Document.js";
 import { logActivity } from "../utils/logActivity.js";
-import { sendEmail } from "../utils/emailService.js";
+import { sendEmail, sendSignatureConfirmationEmail } from "../utils/emailService.js";
 
 let openai = null;
 const getOpenAI = () => {
@@ -281,17 +285,31 @@ export const generateDocument = async (req, res, next) => {
 
     const generatedAt = new Date().toISOString();
 
-    const notifyEmail = req.body.notifyEmail || req.user?.email;
-    console.log("[DocGen] Request user:", req.user);
-    console.log("[DocGen] User email from request:", notifyEmail);
-    
-    // Use authenticated user's email - NO fallback
-    const userEmail = notifyEmail;
+    let savedDocument = null;
+    if (req.user?._id) {
+      try {
+        savedDocument = await Document.create({
+          title: templateTitle,
+          content: document,
+          templateTitle,
+          formData,
+          language,
+          user: req.user._id,
+          status: 'pending_signature'
+        });
+      } catch (e) {
+        console.error("[DocGen] Failed to persist Document:", e?.message);
+      }
+    }
+
+    const userEmail = req.user?.email || req.body.notifyEmail;
     console.log("[DocGen] Final email to send:", userEmail);
-    
+
     if (userEmail) {
       try {
-        const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
+        const signUrl = savedDocument
+          ? `${process.env.CLIENT_URL || 'http://localhost:8080'}/sign/${savedDocument._id}/${savedDocument.signToken}`
+          : `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
         console.log("[DocGen] Sending email to:", userEmail);
         console.log("[DocGen] Document title:", templateTitle);
         console.log("[DocGen] Signing URL:", signUrl);
@@ -356,9 +374,12 @@ export const generateDocument = async (req, res, next) => {
     }
 
     res.json({
-      document,
+      document: savedDocument,
       templateTitle,
       generatedAt,
+      signUrl: savedDocument
+        ? `${process.env.CLIENT_URL || 'http://localhost:8080'}/sign/${savedDocument._id}/${savedDocument.signToken}`
+        : undefined,
     });
   } catch (error) {
     if (error?.status === 429) {
@@ -424,15 +445,33 @@ export const generateDocumentStream = async (req, res) => {
     const notifyEmail = req.body.notifyEmail || req.user?.email;
     console.log("[DocGen Stream] Request user:", req.user);
     console.log("[DocGen Stream] User email from request:", notifyEmail);
-    
-    // Use authenticated user's email - NO fallback
+
+    let savedDocument = null;
+    if (req.user?._id) {
+      try {
+        savedDocument = await Document.create({
+          title: templateTitle,
+          content: fullDocument,
+          templateTitle,
+          formData,
+          language,
+          user: req.user._id,
+          status: 'pending_signature'
+        });
+      } catch (e) {
+        console.error("[DocGen Stream] Failed to persist Document:", e?.message);
+      }
+    }
+
     const userEmail = notifyEmail;
     console.log("[DocGen Stream] Final email to send:", userEmail);
-    
+
     if (userEmail) {
       (async () => {
         try {
-          const signUrl = `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
+          const signUrl = savedDocument
+            ? `${process.env.CLIENT_URL || 'http://localhost:8080'}/sign/${savedDocument._id}/${savedDocument.signToken}`
+            : `${process.env.CLIENT_URL || 'http://localhost:8080'}/template/sign?title=${encodeURIComponent(templateTitle)}&id=${Date.now()}`;
           console.log("[DocGen Stream] Sending email to:", userEmail);
           console.log("[DocGen Stream] Document title:", templateTitle);
           console.log("[DocGen Stream] Signing URL:", signUrl);
@@ -486,8 +525,8 @@ export const generateDocumentStream = async (req, res) => {
               </div>
             `,
           });
-          
-          console.log("✅ [Combined Email] Document generation + signature request email sent successfully (stream) to:", userEmail);
+
+          console.log("✅ [Combined Email] Document generation + signature request email sent (stream) to:", userEmail);
         } catch (err) {
           console.warn("❌ [Docs] Failed to send combined email (stream)", err?.message);
           console.warn("❌ [Docs] Error details:", err);
@@ -542,10 +581,7 @@ export const extractNID = async (req, res, next) => {
     });
 
     const rawResponse = completion.choices[0].message.content.trim();
-
-    // Clean up potential markdown formatting if the model disobeys
     const jsonString = rawResponse.replace(/^```json/i, "").replace(/^```/, "").replace(/```$/, "").trim();
-
     const extractedData = JSON.parse(jsonString);
 
     if (req.user) {
@@ -562,3 +598,190 @@ export const extractNID = async (req, res, next) => {
   }
 };
 
+// @desc    Sign a document
+// @route   POST /api/documents/:documentId/sign
+export const signDocument = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+    const { signerName } = req.body;
+
+    if (!signerName || signerName.trim().length === 0) {
+      return res.status(400).json({ message: "Signer name is required" });
+    }
+
+    const document = await Document.findById(documentId).populate('user');
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (document.signTokenUsed) {
+      return res.status(400).json({ message: "This signing link has already been used" });
+    }
+
+    const user = document.user;
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const timestamp = new Date().toISOString();
+
+    const getClientIP = (req) => {
+      const forwarded = req.headers['x-forwarded-for'];
+      const realIP = req.headers['x-real-ip'];
+      const clientIP = req.headers['x-client-ip'];
+      if (forwarded) {
+        const ips = forwarded.split(',').map(ip => ip.trim());
+        return ips[0];
+      }
+      if (realIP) return realIP;
+      if (clientIP) return clientIP;
+      return req.socket.remoteAddress;
+    };
+
+    const ipAddress = getClientIP(req);
+    const normalizedIP = ipAddress === '::1' ? '127.0.0.1' : ipAddress;
+
+    const hashString = `${documentId}${signerName}${timestamp}${normalizedIP}`;
+    const sha256Hash = crypto.createHash('sha256').update(hashString).digest('hex');
+
+    let qrFilePath = null;
+    let qrFileName = null;
+    try {
+      const verificationUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/signature/verify/${document._id}`;
+      const ts = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 15);
+      qrFileName = `qr-${document._id}-${ts}-${randomId}.png`;
+      qrFilePath = `/tmp/${qrFileName}`;
+
+      await QRCode.toFile(qrFilePath, verificationUrl, {
+        type: 'png',
+        width: 200,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' }
+      });
+    } catch (err) {
+      console.error("QR Code generation failed:", err?.message);
+      qrFilePath = null;
+      qrFileName = null;
+    }
+
+    const signature = {
+      signerName: signerName.trim(),
+      timestamp: new Date(timestamp),
+      ipAddress: normalizedIP,
+      sha256Hash,
+      qrCodeDataUrl: qrFilePath,
+    };
+
+    document.signatures.push(signature);
+    document.status = 'signed';
+    document.signTokenUsed = true;
+    document.signedAt = new Date(timestamp);
+    await document.save();
+
+    try {
+      const userName = user?.name || "User";
+      const userEmail = user?.email || "noreply@example.com";
+
+      await sendSignatureConfirmationEmail({
+        to: userEmail,
+        userName,
+        documentTitle: document.title,
+        documentId: document._id.toString(),
+        signerName,
+        timestamp,
+        ipAddress: normalizedIP,
+        sha256Hash,
+        qrFilePath,
+        qrFileName,
+      });
+
+      if (qrFilePath && fs.existsSync(qrFilePath)) {
+        try { fs.unlinkSync(qrFilePath); } catch {}
+      }
+    } catch (err) {
+      console.warn("Failed to send signature confirmation email:", err?.message);
+      if (qrFilePath && fs.existsSync(qrFilePath)) {
+        try { fs.unlinkSync(qrFilePath); } catch {}
+      }
+    }
+
+    try {
+      const webhookUrl = process.env.WEBHOOK_URL;
+      if (webhookUrl) {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'User-Agent': 'Legal-Shathi-Webhook-Client/1.0' },
+          body: JSON.stringify({
+            event: 'signature_completed',
+            data: {
+              documentTitle: document.title,
+              documentId: document._id.toString(),
+              signerName,
+              timestamp,
+              ipAddress,
+              sha256Hash,
+              qrCodeDataUrl: qrFilePath,
+              userEmail: user.email,
+              userName: user.name,
+            },
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      }
+    } catch (err) {
+      console.warn("Failed to send webhook notification:", err?.message);
+    }
+
+    res.status(200).json({
+      message: "Document signed successfully",
+      document: {
+        id: document._id,
+        title: document.title,
+        status: document.status,
+        signedAt: document.signedAt,
+        signature,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get document signing page details
+// @route   GET /api/documents/:documentId/sign/:token
+export const getSigningPage = async (req, res, next) => {
+  try {
+    const { documentId, token } = req.params;
+
+    // Find document and validate token
+    const document = await Document.findById(documentId).populate('user');
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (document.signToken !== token) {
+      return res.status(400).json({ message: "Invalid signing link" });
+    }
+
+    if (document.signTokenUsed) {
+      return res.status(400).json({ message: "This signing link has already been used" });
+    }
+
+    res.json({
+      document: {
+        id: document._id,
+        title: document.title,
+        templateTitle: document.templateTitle,
+        content: document.content,
+        generatedAt: document.generatedAt
+      },
+      user: {
+        name: document.user.name,
+        email: document.user.email
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

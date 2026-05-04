@@ -24,6 +24,7 @@
     "nodemailer": "^6.10.1",
     "openai": "^4.82.0",
     "pdf-parse": "^1.1.4",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.8.3",
     "streamifier": "^0.1.1"
   },

@@ -65,15 +65,20 @@ const AnalyticsDashboard = () => {
   };
 
   const apiUsageData = {
-    labels: (analytics?.apiUsage ?? []).map((u) => u.month),
+    labels: (analytics?.apiUsage ?? []).map((u) => u.date || u.month),
     datasets: [
       {
         label: "API Calls",
         data: (analytics?.apiUsage ?? []).map((u) => u.count),
-        fill: false,
+        fill: true,
         borderColor: "#6366f1",
-        backgroundColor: "#6366f1",
+        backgroundColor: "rgba(99, 102, 241, 0.1)",
         tension: 0.4,
+        pointBackgroundColor: "#6366f1",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
       },
     ],
   };
@@ -134,7 +139,36 @@ const AnalyticsDashboard = () => {
             </Card>
             <Card className="p-6">
               <h2 className="mb-2 font-semibold">API Usage (Monthly)</h2>
-              <Line data={apiUsageData} />
+              <Line
+                data={apiUsageData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                      mode: 'index',
+                      intersect: false,
+                      callbacks: {
+                        title: (context) => `Period: ${context[0].label}`,
+                        label: (context) => `API Calls: ${context.parsed.y}`,
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      display: true,
+                      title: { display: true, text: 'Month' },
+                      grid: { display: false },
+                    },
+                    y: {
+                      display: true,
+                      title: { display: true, text: 'Number of API Calls' },
+                      beginAtZero: true,
+                      ticks: { stepSize: 1 },
+                    },
+                  },
+                }}
+              />
             </Card>
           </div>
         </>

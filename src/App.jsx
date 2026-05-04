@@ -10,6 +10,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyOtp from "./pages/VerifyOtp";
 import DocumentSign from "./pages/DocumentSign";
+import SignDocumentPage from "./pages/SignDocumentPage";
+import SignDocumentSecondPage from "./pages/SignDocumentSecondPage";
 import NotFound from "./pages/NotFound";
 import TemplateDetail from "./pages/TemplateDetail";
 import AiChatbot from "./components/AiChatbot";
@@ -74,6 +76,8 @@ const AppRoutes = () => (
       <Route path="/templates" element={<Templates />} />
       <Route path="/template/:id" element={<TemplateDetail />} />
       <Route path="/template/sign" element={<DocumentSign />} />
+      <Route path="/sign/:documentId/:token" element={<SignDocumentPage />} />
+      <Route path="/sign-second/:documentId/:token" element={<SignDocumentSecondPage />} />
       <Route path="/bulk-template" element={<TemplateBulkDetail />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/analyze" element={<DocumentAnalysis />} />

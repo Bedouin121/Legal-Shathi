@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Template from "../models/Template.js";
 import ChatHistory from "../models/ChatHistory.js";
+import ActivityLog from "../models/ActivityLog.js";
 
 // @desc    Get admin analytics (real DB data)
 // @route   GET /api/analytics
@@ -93,34 +94,30 @@ export const getAnalyticsSummary = async (req, res, next) => {
       ChatHistory.countDocuments(),
     ]);
 
-    const generatedAgg = await ChatHistory.aggregate([
-      { $unwind: "$messages" },
-      { $match: { "messages.role": "assistant" } },
-      { $count: "count" },
-    ]);
-    const generatedDocuments = generatedAgg[0]?.count || 0;
+    const generatedDocuments = await ActivityLog.countDocuments({ type: "document_generated" });
 
-    const favoritesAgg = await User.aggregate([
-      { $unwind: "$favorites" },
-      { $group: { _id: "$favorites", count: { $sum: 1 } } },
+    const documentGenAgg = await ActivityLog.aggregate([
+      { $match: { type: "document_generated" } },
+      { $group: { _id: "$metadata.templateTitle", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 4 },
     ]);
 
     let popularTemplates = [];
 
-    if (favoritesAgg.length > 0) {
-      const templateIds = favoritesAgg.map((f) => f._id);
-      const templates = await Template.find({ _id: { $in: templateIds } })
+    if (documentGenAgg.length > 0) {
+      const templateTitles = documentGenAgg.map(d => d._id).filter(Boolean);
+      const templates = await Template.find({ title: { $in: templateTitles } })
         .select("title")
         .lean();
-      const titleById = new Map(templates.map((t) => [String(t._id), t.title]));
-      popularTemplates = favoritesAgg
-        .map((f) => ({
-          name: titleById.get(String(f._id)) || "Unknown Template",
-          count: f.count,
-        }))
-        .filter((t) => t.name !== "Unknown Template");
+      const titleById = new Map(templates.map((t) => [t.title, t.title]));
+
+      popularTemplates = documentGenAgg
+        .filter((d) => d._id)
+        .map((d) => ({
+          name: titleById.get(d._id) || d._id,
+          count: d.count,
+        }));
     }
 
     if (popularTemplates.length === 0) {
@@ -150,17 +147,21 @@ export const getAnalyticsSummary = async (req, res, next) => {
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     let apiUsage = usageAgg.map((u) => ({
+      date: `${monthNames[(u._id.month ?? 1) - 1] ?? "Unknown"} ${u._id.year}`,
       month: monthNames[(u._id.month ?? 1) - 1] ?? "Unknown",
+      year: u._id.year,
       count: u.count,
     }));
 
+    const currentYear = new Date().getFullYear();
     if (apiUsage.length === 0) {
       apiUsage = [
-        { month: "Jan", count: 0 },
-        { month: "Feb", count: 0 },
-        { month: "Mar", count: 0 },
-        { month: "Apr", count: 0 },
-        { month: "May", count: 0 },
+        { date: `Jan ${currentYear}`, month: "Jan", year: currentYear, count: 0 },
+        { date: `Feb ${currentYear}`, month: "Feb", year: currentYear, count: 0 },
+        { date: `Mar ${currentYear}`, month: "Mar", year: currentYear, count: 0 },
+        { date: `Apr ${currentYear}`, month: "Apr", year: currentYear, count: 0 },
+        { date: `May ${currentYear}`, month: "May", year: currentYear, count: 0 },
+        { date: `Jun ${currentYear}`, month: "Jun", year: currentYear, count: 0 },
       ];
     } else if (apiUsage.length > 6) {
       apiUsage = apiUsage.slice(-6);

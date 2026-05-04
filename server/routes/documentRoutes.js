@@ -1,7 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
-import { getTemplateFields, generateDocument, generateDocumentStream, extractNID } from "../controllers/documentController.js";
+import { getTemplateFields, generateDocument, generateDocumentStream, extractNID, signDocument, getSigningPage } from "../controllers/documentController.js";
 import { analyzeUploadedDocument } from "../controllers/documentAnalysisController.js";
 import documentUpload from "../middleware/documentUpload.js";
 import { optionalAuth } from "../middleware/auth.js";
@@ -38,5 +38,7 @@ router.post("/generate", optionalAuth, docLimiter, generateDocument);
 router.post("/generate/stream", optionalAuth, docLimiter, generateDocumentStream);
 router.post("/extract-nid", upload.single("nidImage"), extractNID);
 router.post("/analyze", analyzeLimiter, documentUpload.single("file"), analyzeUploadedDocument);
+router.get("/:documentId/sign/:token", getSigningPage);
+router.post("/:documentId/sign", signDocument);
 
 export default router;

@@ -47,7 +47,7 @@ const Navbar = () => {
     { label: "Lawyer Consult", path: "/lawyer-chat" },
     { label: "Citizen Help", path: "/citizen-protection" },
     { label: "E-Signature", path: "/esignature" },
-    // { label: "AI Analysis", path: "/analyze" },
+    { label: "Analytics", path: "/analytics-dashboard" },
   ];
 
   return (
