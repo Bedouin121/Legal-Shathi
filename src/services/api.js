@@ -177,6 +177,31 @@ export const chatAPI = {
   deleteSession: (id) => apiFetch(`/chat/history/${id}`, { method: "DELETE" }),
 };
 
+// ==================== Live Lawyer Chat ====================
+export const liveChatAPI = {
+  createRequest: ({ guestId, guestName, issueSummary }) =>
+    apiFetch("/live-chat/request", {
+      method: "POST",
+      body: JSON.stringify({ guestId, guestName, issueSummary }),
+    }),
+
+  getMySession: (guestId) =>
+    apiFetch(`/live-chat/my-session${guestId ? `?guestId=${encodeURIComponent(guestId)}` : ""}`),
+
+  getLawyerQueue: () => apiFetch("/live-chat/lawyer/queue"),
+
+  claimSession: (sessionId) =>
+    apiFetch(`/live-chat/lawyer/sessions/${sessionId}/claim`, { method: "POST" }),
+
+  getLawyerSession: (sessionId) => apiFetch(`/live-chat/lawyer/sessions/${sessionId}`),
+
+  closeSession: (sessionId, guestId = null) =>
+    apiFetch(`/live-chat/sessions/${sessionId}/close`, {
+      method: "POST",
+      body: JSON.stringify({ guestId }),
+    }),
+};
+
 export const judgmentAPI = {
   summarize: (judgment) =>
     apiFetch("/chat/guest", {

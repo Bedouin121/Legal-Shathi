@@ -23,12 +23,14 @@ import ActivityTimeline from "./pages/ActivityTimeline";
 import FindLawyer from "./pages/FindLawyer";
 import CitizenProtection from "./pages/CitizenProtection";
 import TemplateBulkDetail from "./pages/TemplateBulkDetail";
+import LawyerChat from "./pages/LawyerChat";
+import LawyerAdmin from "./pages/LawyerAdmin";
 
 const queryClient = new QueryClient();
 
 const FloatingChatbot = () => {
   const location = useLocation();
-  const hidePaths = ["/chat", "/login", "/register", "/verify-otp", "/bulk-template", "/template/sign"];
+  const hidePaths = ["/chat", "/login", "/register", "/verify-otp", "/bulk-template", "/template/sign", "/lawyer-chat", "/admin-lawyer-chat"];
   if (hidePaths.includes(location.pathname) || location.pathname.startsWith("/template/")) return null;
   return <AiChatbot />;
 };
@@ -81,6 +83,8 @@ const AppRoutes = () => (
       <Route path="/verify-otp" element={<VerifyOtp />} />
       <Route path="/analytics-dashboard" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
       <Route path="/activity" element={<ProtectedRoute><ActivityTimeline /></ProtectedRoute>} />
+      <Route path="/lawyer-chat" element={<LawyerChat />} />
+      <Route path="/admin-lawyer-chat" element={<ProtectedRoute><LawyerAdmin /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </>

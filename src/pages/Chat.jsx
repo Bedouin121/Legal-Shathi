@@ -29,25 +29,22 @@ const ChatMessage = ({ message }) => {
 
   return (
     <div className={cn("flex gap-3 sm:gap-4 mb-6 group", isUser ? "flex-row-reverse" : "flex-row")}>
-      <div className={cn(
-        "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center shadow-lg",
-        isUser ? "bg-primary" : "bg-gradient-to-br from-green-500 to-emerald-600"
-      )}>
-        {isUser
-          ? <User className="h-4 w-4 text-white" />
-          : <Bot className="h-5 w-5 text-white" />
-        }
+      <div
+        className={cn(
+          "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center shadow-lg",
+          isUser ? "bg-primary" : "bg-gradient-to-br from-green-500 to-emerald-600"
+        )}
+      >
+        {isUser ? <User className="h-4 w-4 text-white" /> : <Bot className="h-5 w-5 text-white" />}
       </div>
       <div className={cn("flex flex-col max-w-[80%] sm:max-w-[72%]", isUser && "items-end")}>
-        <span className="text-xs text-muted-foreground mb-1 px-1">
-          {isUser ? "You" : "AI Shathi"}
-        </span>
-        <div className={cn(
-          "rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap",
-          isUser
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-card border border-border text-foreground rounded-tl-sm"
-        )}>
+        <span className="text-xs text-muted-foreground mb-1 px-1">{isUser ? "You" : "AI Shathi"}</span>
+        <div
+          className={cn(
+            "rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap",
+            isUser ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-card border border-border text-foreground rounded-tl-sm"
+          )}
+        >
           {message.content}
         </div>
         {!isUser && (
@@ -86,18 +83,18 @@ const Chat = () => {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "আস্সালামু আলাইকুম! I'm AI Shathi, your dedicated legal assistant for Bangladesh.\n\nI can help you:\n• Choose the right legal template\n• Understand legal terms and processes\n• Navigate Bangladeshi law\n• Draft and review document needs\n\nHow can I assist you today?",
+      content:
+        "Assalamu Alaikum! I'm AI Shathi, your dedicated legal assistant for Bangladesh.\n\nI can help you:\n- Choose the right legal template\n- Understand legal terms and processes\n- Navigate Bangladeshi law\n- Draft and review document needs\n\nHow can I assist you today?",
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chatId, setChatId] = useState(null);
-  const [sessionMsgCount, setSessionMsgCount] = useState(0);
+  const [, setSessionMsgCount] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Track user+assistant message pairs for memory indicator (exclude initial greeting)
   const contextMessages = Math.min(Math.max(messages.length - 1, 0), SESSION_MEMORY_LIMIT);
 
   useEffect(() => {
@@ -114,12 +111,11 @@ const Chat = () => {
     setIsLoading(true);
     setError(null);
 
-    // Add placeholder assistant message for streaming
     const assistantIndex = messages.length + 1;
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
-      const onChunk = (chunk, fullText) => {
+      const onChunk = (_chunk, fullText) => {
         setMessages((prev) => {
           const updated = [...prev];
           updated[assistantIndex] = { role: "assistant", content: fullText };
@@ -130,7 +126,9 @@ const Chat = () => {
       if (user) {
         const result = await chatAPI.sendMessageStream(text, chatId, onChunk);
         setChatId(result.chatId);
-        if (result.messageCount) setSessionMsgCount(Math.min(result.messageCount, SESSION_MEMORY_LIMIT));
+        if (result.messageCount) {
+          setSessionMsgCount(Math.min(result.messageCount, SESSION_MEMORY_LIMIT));
+        }
       } else {
         await chatAPI.guestStream(text, messages, onChunk);
       }
@@ -150,17 +148,18 @@ const Chat = () => {
   };
 
   const clearChat = () => {
-    setMessages([{
-      role: "assistant",
-      content: "Chat cleared! How can I help you with legal matters today?",
-    }]);
+    setMessages([
+      {
+        role: "assistant",
+        content: "Chat cleared! How can I help you with legal matters today?",
+      },
+    ]);
     setChatId(null);
     setError(null);
   };
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
-      {/* Header */}
       <header className="flex-shrink-0 border-b border-border bg-card/80 backdrop-blur-xl">
         <div className="flex items-center justify-between px-4 sm:px-6 h-16">
           <div className="flex items-center gap-3">
@@ -178,7 +177,7 @@ const Chat = () => {
                 <h1 className="font-display font-semibold text-foreground text-sm sm:text-base">AI Shathi</h1>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                  <span className="text-xs text-muted-foreground">Legal AI · Online</span>
+                  <span className="text-xs text-muted-foreground">Legal AI - Online</span>
                   {contextMessages > 0 && (
                     <span className="hidden sm:flex items-center gap-1 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 border border-primary/20">
                       <Brain className="h-3 w-3" />
@@ -202,13 +201,9 @@ const Chat = () => {
         </div>
       </header>
 
-      {/* Chat Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Suggested Questions (Desktop) */}
         <aside className="hidden lg:flex flex-col w-64 xl:w-72 border-r border-border bg-card/30 p-4 flex-shrink-0">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Suggested Questions
-          </h3>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Suggested Questions</h3>
           <div className="flex flex-col gap-2">
             {SUGGESTED_QUESTIONS.map((q) => (
               <button
@@ -222,7 +217,6 @@ const Chat = () => {
             ))}
           </div>
 
-          {/* Session Memory Indicator */}
           <div className="mt-4 rounded-xl bg-gradient-to-br from-primary/10 to-emerald-500/5 border border-primary/20 p-3">
             <div className="flex items-center gap-2 mb-2">
               <Brain className="h-3.5 w-3.5 text-primary" />
@@ -232,27 +226,22 @@ const Chat = () => {
               {Array.from({ length: SESSION_MEMORY_LIMIT }).map((_, i) => (
                 <div
                   key={i}
-                  className={cn(
-                    "h-1.5 flex-1 rounded-full transition-all",
-                    i < contextMessages ? "bg-primary" : "bg-border"
-                  )}
+                  className={cn("h-1.5 flex-1 rounded-full transition-all", i < contextMessages ? "bg-primary" : "bg-border")}
                 />
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
               {contextMessages === 0
-                ? "Start chatting — AI remembers your last 10 messages."
+                ? "Start chatting - AI remembers your last 10 messages."
                 : contextMessages >= SESSION_MEMORY_LIMIT
-                ? "Memory full — oldest messages are rolling off."
-                : `${contextMessages} of ${SESSION_MEMORY_LIMIT} messages in context`
-              }
+                  ? "Memory full - oldest messages are rolling off."
+                  : `${contextMessages} of ${SESSION_MEMORY_LIMIT} messages in context`}
             </p>
           </div>
 
           <div className="mt-auto pt-4 flex flex-col gap-3">
-            {/* Find Lawyer CTA - Sidebar */}
-            <Link 
-              to="/find-lawyer" 
+            <Link
+              to="/find-lawyer"
               className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-900 to-green-800 p-4 text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95"
             >
               <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-500/20 blur-xl pointer-events-none"></div>
@@ -275,7 +264,6 @@ const Chat = () => {
           </div>
         </aside>
 
-        {/* Messages */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="max-w-3xl mx-auto">
@@ -293,7 +281,6 @@ const Chat = () => {
             </div>
           </div>
 
-          {/* Mobile Suggested Questions */}
           {messages.length === 1 && (
             <div className="lg:hidden px-4 pb-2">
               <div className="max-w-3xl mx-auto">
@@ -313,7 +300,6 @@ const Chat = () => {
             </div>
           )}
 
-          {/* Input Bar */}
           <div className="flex-shrink-0 border-t border-border bg-card/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-end gap-3 bg-secondary rounded-2xl border border-border px-4 py-3 focus-within:ring-1 focus-within:ring-primary transition-all">
@@ -332,14 +318,11 @@ const Chat = () => {
                   disabled={!input.trim() || isLoading}
                   className="flex-shrink-0 w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {isLoading
-                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : <Send className="h-4 w-4" />
-                  }
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
               <p className="text-center text-xs text-amber-600/80 mt-2">
-                Ai may not fully be correct. Verify important legal information with a licensed lawyer.
+                AI may not always be correct. Verify important legal information with a licensed lawyer.
               </p>
             </div>
           </div>

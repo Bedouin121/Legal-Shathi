@@ -67,7 +67,7 @@ const SectionTitle = ({ icon: Icon, title, subtitle }) => (
 );
 
 const Pill = ({ children, tone = "low" }) => {
-  const s = riskStyles[tone] || riskStyles.low;
+  const style = riskStyles[tone] || riskStyles.low;
   return (
     <span
       style={{
@@ -76,9 +76,9 @@ const Pill = ({ children, tone = "low" }) => {
         gap: 8,
         padding: "6px 12px",
         borderRadius: 999,
-        border: `1px solid ${s.border}`,
-        background: s.bg,
-        color: s.color,
+        border: `1px solid ${style.border}`,
+        background: style.bg,
+        color: style.color,
         fontWeight: 800,
         fontSize: ".8rem",
         letterSpacing: ".01em",
@@ -93,7 +93,6 @@ const Pill = ({ children, tone = "low" }) => {
 
 const DocumentAnalysis = () => {
   const navigate = useNavigate();
-
   const [file, setFile] = useState(null);
   const [documentType, setDocumentType] = useState("auto");
   const [loading, setLoading] = useState(false);
@@ -107,6 +106,7 @@ const DocumentAnalysis = () => {
     setLoading(true);
     setError("");
     setResult(null);
+
     try {
       const data = await documentAPI.analyze(file, documentType);
       setResult(data);
@@ -117,10 +117,10 @@ const DocumentAnalysis = () => {
     }
   };
 
-  const onPick = (f) => {
+  const onPick = (selectedFile) => {
     setError("");
     setResult(null);
-    setFile(f || null);
+    setFile(selectedFile || null);
   };
 
   return (
@@ -155,7 +155,7 @@ const DocumentAnalysis = () => {
             <SectionTitle
               icon={ShieldAlert}
               title="AI Document Analysis"
-              subtitle="Upload a PDF/DOCX. We'll flag missing clauses, risky terms, and provide a color‑coded risk score."
+              subtitle="Upload a PDF/DOCX. We'll flag missing clauses, risky terms, and provide a color-coded risk score."
             />
 
             <div style={{ display: "grid", gridTemplateColumns: "1.1fr .9fr", gap: 16, alignItems: "end" }} className="grid md:grid-cols-2">
@@ -205,9 +205,9 @@ const DocumentAnalysis = () => {
                     outline: "none",
                   }}
                 >
-                  {DOC_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
+                  {DOC_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
                     </option>
                   ))}
                 </select>
@@ -231,7 +231,7 @@ const DocumentAnalysis = () => {
                 >
                   {loading ? (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                      <Loader2 className="animate-spin" style={{ width: 18, height: 18 }} /> Analyzing…
+                      <Loader2 className="animate-spin" style={{ width: 18, height: 18 }} /> Analyzing...
                     </span>
                   ) : (
                     "Analyze Document"
@@ -257,7 +257,7 @@ const DocumentAnalysis = () => {
                     </div>
                     <div style={{ marginTop: 4, color: "var(--ls-text2)", fontSize: ".85rem", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                       Detected type: <b>{String(result.detectedType || "unknown")}</b> {result.aiUsed ? "(AI)" : "(rules)"}
-                      {result.wasTruncated ? " • Note: long document truncated for analysis" : ""}
+                      {result.wasTruncated ? " - Note: long document truncated for analysis" : ""}
                     </div>
                   </div>
                   <Pill tone={result.riskLevel || "low"}>Risk: {String(result.riskLevel || "low").toUpperCase()}</Pill>
@@ -271,14 +271,14 @@ const DocumentAnalysis = () => {
                   </div>
                   {result.missingClauses?.length ? (
                     <div style={{ display: "grid", gap: 10 }}>
-                      {result.missingClauses.slice(0, 10).map((c, idx) => (
-                        <div key={`${c.clause}-${idx}`} style={{ padding: 12, borderRadius: 14, border: "1px solid rgba(0,0,0,.08)", background: "rgba(255,255,255,.65)" }}>
-                          <div style={{ fontWeight: 900, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{c.clause}</div>
+                      {result.missingClauses.slice(0, 10).map((clause, index) => (
+                        <div key={`${clause.clause}-${index}`} style={{ padding: 12, borderRadius: 14, border: "1px solid rgba(0,0,0,.08)", background: "rgba(255,255,255,.65)" }}>
+                          <div style={{ fontWeight: 900, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{clause.clause}</div>
                           <div style={{ marginTop: 6, color: "var(--ls-text2)", fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                            {c.reason}
+                            {clause.reason}
                           </div>
                           <div style={{ marginTop: 8, fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                            <b>Suggestion:</b> {c.suggestion}
+                            <b>Suggestion:</b> {clause.suggestion}
                           </div>
                         </div>
                       ))}
@@ -301,15 +301,15 @@ const DocumentAnalysis = () => {
                   </div>
                   {result.riskyTerms?.length ? (
                     <div style={{ display: "grid", gap: 10 }}>
-                      {result.riskyTerms.slice(0, 10).map((t, idx) => (
-                        <div key={`${t.term}-${idx}`} style={{ padding: 12, borderRadius: 14, border: "1px solid rgba(0,0,0,.08)", background: "rgba(255,255,255,.65)" }}>
+                      {result.riskyTerms.slice(0, 10).map((term, index) => (
+                        <div key={`${term.term}-${index}`} style={{ padding: 12, borderRadius: 14, border: "1px solid rgba(0,0,0,.08)", background: "rgba(255,255,255,.65)" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                            <div style={{ fontWeight: 900, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{t.term}</div>
-                            <Pill tone={t.severity === "high" ? "high" : t.severity === "medium" ? "medium" : "low"}>
-                              {String(t.severity || "low").toUpperCase()}
+                            <div style={{ fontWeight: 900, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{term.term}</div>
+                            <Pill tone={term.severity === "high" ? "high" : term.severity === "medium" ? "medium" : "low"}>
+                              {String(term.severity || "low").toUpperCase()}
                             </Pill>
                           </div>
-                          {t.excerpt ? (
+                          {term.excerpt ? (
                             <pre
                               style={{
                                 marginTop: 10,
@@ -324,14 +324,14 @@ const DocumentAnalysis = () => {
                                 color: "var(--ls-text)",
                               }}
                             >
-                              {t.excerpt}
+                              {term.excerpt}
                             </pre>
                           ) : null}
                           <div style={{ marginTop: 10, color: "var(--ls-text2)", fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                            {t.whyRisky}
+                            {term.whyRisky}
                           </div>
                           <div style={{ marginTop: 8, fontSize: ".82rem", lineHeight: 1.55, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                            <b>Suggestion:</b> {t.suggestion}
+                            <b>Suggestion:</b> {term.suggestion}
                           </div>
                         </div>
                       ))}
@@ -354,9 +354,9 @@ const DocumentAnalysis = () => {
                   Suggestions
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8, color: "var(--ls-text2)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  {(result.suggestions || []).slice(0, 12).map((s, i) => (
-                    <li key={i} style={{ lineHeight: 1.6 }}>
-                      {s}
+                  {(result.suggestions || []).slice(0, 12).map((suggestion, index) => (
+                    <li key={index} style={{ lineHeight: 1.6 }}>
+                      {suggestion}
                     </li>
                   ))}
                 </ul>

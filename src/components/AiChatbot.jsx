@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, X, Send, Minimize2, Maximize2, Bot, User, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, X, Send, Minimize2, Maximize2, Bot, User, Loader2, AlertCircle, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import { chatAPI } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 
@@ -51,6 +52,7 @@ const TypingIndicator = () => (
 
 const AiChatbot = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState([
@@ -152,6 +154,16 @@ const AiChatbot = () => {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/lawyer-chat');
+                }}
+                className="w-7 h-7 mr-2 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/20 transition-colors bg-white/10"
+                title="Talk to a Real Lawyer"
+              >
+                <Headphones className="h-4 w-4" />
+              </button>
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="hidden sm:flex w-7 h-7 rounded-lg items-center justify-center text-white/80 hover:bg-white/20 transition-colors"

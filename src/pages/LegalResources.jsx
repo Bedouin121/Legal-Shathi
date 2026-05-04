@@ -64,6 +64,7 @@ const LegalResources = () => {
   const [summary, setSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState("");
+  const [activeTab, setActiveTab] = useState("laws");
   const categoryCounts = useMemo(() => {
     const counts = Object.create(null);
     for (const c of LAW_CATEGORIES) counts[c] = 0;
@@ -84,11 +85,17 @@ const LegalResources = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  useEffect(() => {
     const els = document.querySelectorAll(".sr");
-    const obs = new IntersectionObserver((entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { threshold: 0.12 });
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
+      { threshold: 0.12 }
+    );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     try {
@@ -191,7 +198,7 @@ const LegalResources = () => {
       
       <section style={{ padding: "96px clamp(16px,5vw,80px)" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <div className="sr" style={{ textAlign: "center", marginBottom: 48 }}>
+          <div className="sr" style={{ textAlign: "center", marginBottom: 32 }}>
             <span className="chip-p" style={S.chip}>Legal Resources</span>
             <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, margin: "16px 0 12px" }}>
               Explore Bangladesh Law Database
@@ -201,7 +208,48 @@ const LegalResources = () => {
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }} className="mod-grid">
+          <div className="sr" style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 40, flexWrap: "wrap" }}>
+            <button
+              onClick={() => setActiveTab("laws")}
+              style={{
+                padding: "12px 24px",
+                borderRadius: 99,
+                border: "none",
+                background: activeTab === "laws" ? "linear-gradient(135deg,#22c55e,#15803d)" : "var(--ls-card)",
+                color: activeTab === "laws" ? "#fff" : "var(--ls-text)",
+                fontWeight: 700,
+                fontSize: "1rem",
+                cursor: "pointer",
+                fontFamily: "'Plus Jakarta Sans',sans-serif",
+                boxShadow: activeTab === "laws" ? "0 4px 14px var(--green-glow)" : "var(--shadow-sm)",
+                transition: "all .3s"
+              }}
+            >
+              Bangladesh Laws
+            </button>
+            <button
+              onClick={() => setActiveTab("judgments")}
+              style={{
+                padding: "12px 24px",
+                borderRadius: 99,
+                border: "none",
+                background: activeTab === "judgments" ? "linear-gradient(135deg,#22c55e,#15803d)" : "var(--ls-card)",
+                color: activeTab === "judgments" ? "#fff" : "var(--ls-text)",
+                fontWeight: 700,
+                fontSize: "1rem",
+                cursor: "pointer",
+                fontFamily: "'Plus Jakarta Sans',sans-serif",
+                boxShadow: activeTab === "judgments" ? "0 4px 14px var(--green-glow)" : "var(--shadow-sm)",
+                transition: "all .3s"
+              }}
+            >
+              Supreme Court Judgments
+            </button>
+          </div>
+
+          {activeTab === "laws" && (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }} className="mod-grid">
             {LAW_MODULES.map((m, i) => (
               <div
                 key={m.title}
@@ -511,8 +559,11 @@ const LegalResources = () => {
               </div>
             </div>
           </div>
+            </>
+          )}
 
-          <div className="sr" style={{ marginTop: 32 }}>
+          {activeTab === "judgments" && (
+          <div className="sr" style={{ marginTop: 0 }}>
             <div
               style={{
                 ...S.card,
@@ -734,6 +785,7 @@ const LegalResources = () => {
               </div>
             </div>
           </div>
+          )}
         </div>
       </section>
 

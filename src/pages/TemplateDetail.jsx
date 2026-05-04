@@ -12,27 +12,30 @@ import {
   Check,
   ScanLine,
 } from "lucide-react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { cn } from "@/lib/utils";
 import { templateAPI, documentAPI } from "@/services/api";
 
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
-const FIRST_PAGE_TOP = 385;       // clears header + "একশত টাকা" row
-const FOLLOWING_PAGE_TOP = 130;
-const PAGE_SIDE_PADDING = 165;    // decorative border ≈111px + 54px breathing room
+const FIRST_PAGE_TOP = 475;       // clears the stamp header and "একশত টাকা" label
+const FOLLOWING_PAGE_TOP = FIRST_PAGE_TOP;
+const PAGE_SIDE_PADDING = 120;    // keeps text inside the visible stamp-paper border
 const PAGE_BOTTOM_PADDING = 110;
+const FIRST_PAGE_PRINT_TOP = "125mm";
+const FOLLOWING_PAGE_PRINT_TOP = FIRST_PAGE_PRINT_TOP;
+const PRINT_SIDE_PADDING = "32mm";
 
-// Content area: 794 - 165*2 = 464px wide; ~8.5px/char at 15px → ~54 chars/line
-// First page content height: 1123 - 385 - 110 = 628px; 15px*1.9lh=28.5px/line → ~22 lines
-// Following pages: 1123 - 130 - 110 = 883px → ~31 lines
 const paginateText = (text) => {
   if (!text) return [""];
 
   const pages = [];
   const paragraphs = text.split("\n");
   let currentLines = 0;
-  const charsPerLine = 54;
-  let maxLines = 21;
+  const charsPerLine = 58;
+  const maxLinesPerPage = 16;
+  let maxLines = maxLinesPerPage;
   let currentPage = "";
 
   paragraphs.forEach((paragraph) => {
@@ -42,7 +45,7 @@ const paginateText = (text) => {
       pages.push(currentPage);
       currentPage = `${paragraph}\n`;
       currentLines = lines;
-      maxLines = 30;
+      maxLines = maxLinesPerPage;
       return;
     }
 
@@ -249,14 +252,16 @@ const TemplateDetail = () => {
           .content {
             position: relative;
             z-index: 1;
-            padding: 0 40mm 30mm 40mm;
+            padding: 0 ${PRINT_SIDE_PADDING} 30mm ${PRINT_SIDE_PADDING};
             font-family: 'Times New Roman', Georgia, serif;
-            font-size: 15px;
-            line-height: 1.7;
+            font-size: 14px;
+            line-height: 1.65;
             color: #1a1a1a;
             white-space: pre-wrap;
             word-wrap: break-word;
-            text-align: left;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            text-align: justify;
           }
         </style>
       </head>
@@ -266,8 +271,8 @@ const TemplateDetail = () => {
             (pageText, idx) => `
           <div class="page">
             <div class="stamp-bg"></div>
-            <div class="content" style="padding-top: ${idx === 0 ? "95mm" : "30mm"}">
-              ${pageText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+            <div class="content" style="padding-top: ${idx === 0 ? FIRST_PAGE_PRINT_TOP : FOLLOWING_PAGE_PRINT_TOP}">
+              ${pageText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}
             </div>
           </div>
         `
@@ -280,14 +285,24 @@ const TemplateDetail = () => {
     setTimeout(() => win.print(), 800);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([generatedDoc], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${template.title.replace(/\s+/g, "_")}_Legal_Shathi.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    if (!printRef.current) return;
+
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageNodes = Array.from(printRef.current.children);
+
+    for (const [idx, pageNode] of pageNodes.entries()) {
+      const canvas = await html2canvas(pageNode, {
+        backgroundColor: "#ffffff",
+        scale: Math.min(3, window.devicePixelRatio || 2),
+        useCORS: true,
+      });
+      const imageData = canvas.toDataURL("image/png", 1);
+      if (idx > 0) pdf.addPage();
+      pdf.addImage(imageData, "PNG", 0, 0, 210, 297);
+    }
+
+    pdf.save(`${template.title.replace(/\s+/g, "_")}_Legal_Shathi.pdf`);
   };
 
   const pages = paginateText(generatedDoc);
@@ -351,7 +366,7 @@ const TemplateDetail = () => {
                 className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Download</span>
+                <span className="hidden sm:inline">PDF</span>
               </button>
             </div>
           )}
@@ -476,7 +491,7 @@ const TemplateDetail = () => {
         </div>
       ) : (
         <div className="px-4 py-6" style={{ overflowX: "hidden" }}>
-          <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <div style={{ maxWidth: PAGE_WIDTH, margin: "0 auto" }}>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 onClick={() => setStep("form")}
@@ -500,20 +515,20 @@ const TemplateDetail = () => {
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    Download
+                    Download PDF
                   </button>
                 </div>
               )}
             </div>
 
-            <div ref={previewViewportRef} style={{ width: "100%", padding: "20px 0 60px", overflowX: "hidden" }}>
+            <div ref={previewViewportRef} style={{ width: "100%", padding: "12px 0 48px", overflowX: "hidden" }}>
               <div
                 ref={printRef}
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   gap: 24,
-                  alignItems: "flex-start",
+                  alignItems: "center",
                 }}
               >
                 {pages.map((pageText, idx) => (
@@ -556,8 +571,8 @@ const TemplateDetail = () => {
                           bottom: PAGE_BOTTOM_PADDING,
                           overflow: "hidden",
                           fontFamily: "'Times New Roman', Georgia, 'Noto Serif', serif",
-                          fontSize: 15,
-                          lineHeight: 1.9,
+                          fontSize: 14,
+                          lineHeight: 1.75,
                           letterSpacing: "0.015em",
                           color: "#1a0e05",
                           whiteSpace: "pre-wrap",

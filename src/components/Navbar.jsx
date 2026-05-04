@@ -42,11 +42,12 @@ const Navbar = () => {
     { label: "Features", path: "/features" },
     { label: "Legal Resources", path: "/legal-resources" },
     { label: "Templates", path: "/templates" },
-    { label: "Doc Analysis", path: "/document-analysis" },
+    { label: "Ai Analysis", path: "/document-analysis" },
     { label: "AI Chat", path: "/chat" },
+    { label: "Lawyer Consult", path: "/lawyer-chat" },
     { label: "Citizen Help", path: "/citizen-protection" },
     { label: "E-Signature", path: "/esignature" },
-    { label: "AI Analysis", path: "/analyze" },
+    // { label: "AI Analysis", path: "/analyze" },
   ];
 
   return (
@@ -94,24 +95,24 @@ const Navbar = () => {
 
         {/* Desktop nav links — hidden on mobile, flex on md+ via Tailwind */}
         <ul style={{ listStyle: "none", alignItems: "center", gap: 2, margin: 0, padding: 0 }}
-            className="hidden md:flex">
-            {navLinks.map((l) => (
-              <li key={l.label}>
-                <button
-                  onClick={() => scrollTo(l.path)}
-                  style={{
-                    padding: "8px 14px", borderRadius: 10, border: "none", background: "transparent",
-                    fontSize: ".875rem", fontWeight: 600, color: "var(--ls-text2)",
-                    cursor: "pointer", transition: "all .2s", fontFamily: "'Plus Jakarta Sans',sans-serif",
-                  }}
-                  onMouseEnter={e => { e.target.style.color = "var(--green)"; e.target.style.background = "var(--g50)"; }}
-                  onMouseLeave={e => { e.target.style.color = "var(--ls-text2)"; e.target.style.background = "transparent"; }}
-                >
-                  {l.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+          className="hidden md:flex">
+          {navLinks.map((l) => (
+            <li key={l.label}>
+              <button
+                onClick={() => scrollTo(l.path)}
+                style={{
+                  padding: "8px 14px", borderRadius: 10, border: "none", background: "transparent",
+                  fontSize: ".875rem", fontWeight: 600, color: "var(--ls-text2)",
+                  cursor: "pointer", transition: "all .2s", fontFamily: "'Plus Jakarta Sans',sans-serif",
+                }}
+                onMouseEnter={e => { e.target.style.color = "var(--green)"; e.target.style.background = "var(--g50)"; }}
+                onMouseLeave={e => { e.target.style.color = "var(--ls-text2)"; e.target.style.background = "transparent"; }}
+              >
+                {l.label}
+              </button>
+            </li>
+          ))}
+        </ul>
 
         {/* Right side */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -176,9 +177,9 @@ const Navbar = () => {
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Menu"
           >
-            <span style={{ width:22,height:2.5,background:"var(--ls-text)",borderRadius:2,display:"block",transition:".3s",transform: menuOpen ? "translateY(7.5px) rotate(45deg)" : "" }} />
-            <span style={{ width:22,height:2.5,background:"var(--ls-text)",borderRadius:2,display:"block",transition:".3s",opacity: menuOpen ? 0 : 1,transform: menuOpen ? "scaleX(0)" : "" }} />
-            <span style={{ width:22,height:2.5,background:"var(--ls-text)",borderRadius:2,display:"block",transition:".3s",transform: menuOpen ? "translateY(-7.5px) rotate(-45deg)" : "" }} />
+            <span style={{ width: 22, height: 2.5, background: "var(--ls-text)", borderRadius: 2, display: "block", transition: ".3s", transform: menuOpen ? "translateY(7.5px) rotate(45deg)" : "" }} />
+            <span style={{ width: 22, height: 2.5, background: "var(--ls-text)", borderRadius: 2, display: "block", transition: ".3s", opacity: menuOpen ? 0 : 1, transform: menuOpen ? "scaleX(0)" : "" }} />
+            <span style={{ width: 22, height: 2.5, background: "var(--ls-text)", borderRadius: 2, display: "block", transition: ".3s", transform: menuOpen ? "translateY(-7.5px) rotate(-45deg)" : "" }} />
           </button>
         </div>
       </nav>
@@ -212,20 +213,24 @@ const Navbar = () => {
               {l.label}
             </button>
           ))}
-          <div style={{ height:1, background:"rgba(0,0,0,.06)", margin:"8px 0" }} />
+          <div style={{ height: 1, background: "rgba(0,0,0,.06)", margin: "8px 0" }} />
           {!user && (
             <>
               <button onClick={() => { setMenuOpen(false); navigate("/login"); }}
-                style={{ padding:"14px 18px",borderRadius:12,border:"none",background:"transparent",
-                  textAlign:"left",color:"var(--ls-text)",fontWeight:600,fontSize:"1.05rem",
-                  cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                style={{
+                  padding: "14px 18px", borderRadius: 12, border: "none", background: "transparent",
+                  textAlign: "left", color: "var(--ls-text)", fontWeight: 600, fontSize: "1.05rem",
+                  cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif"
+                }}>
                 Sign In
               </button>
               <button onClick={() => { setMenuOpen(false); navigate("/register"); }}
-                style={{ padding:"14px 18px",borderRadius:14,border:"none",
-                  background:"linear-gradient(135deg,#22c55e,#15803d)",
-                  color:"#fff",fontWeight:700,fontSize:"1rem",cursor:"pointer",
-                  fontFamily:"'Plus Jakarta Sans',sans-serif",marginTop:8 }}>
+                style={{
+                  padding: "14px 18px", borderRadius: 14, border: "none",
+                  background: "linear-gradient(135deg,#22c55e,#15803d)",
+                  color: "#fff", fontWeight: 700, fontSize: "1rem", cursor: "pointer",
+                  fontFamily: "'Plus Jakarta Sans',sans-serif", marginTop: 8
+                }}>
                 Get Started →
               </button>
             </>
