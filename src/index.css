@@ -252,16 +252,25 @@
 }
 .lawyer-pin {
   background: linear-gradient(135deg, var(--green), var(--green-glow));
-  width: 30px; height: 30px;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
+  width: 32px; 
+  height: 32px;
+  border-radius: 50%;
   border: 3px solid white;
   box-shadow: 0 4px 12px rgba(22,163,74,.4);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.lawyer-pin:hover {
+  transform: scale(1.1);
 }
 .lawyer-pin span {
-  transform: rotate(45deg);
-  color: white; font-weight: 700; font-size: 12px;
+  color: white; 
+  font-weight: 700; 
+  font-size: 13px;
+  line-height: 1;
 }
 
 /* Keep Leaflet map below UI overlays */
