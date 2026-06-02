@@ -1,29 +1,3 @@
+Legal Shathi is a full-stack, AI-powered legal platform designed to improve access to legal information and services in Bangladesh. It integrates a structured law database, AI-driven assistance, and document automation tools into a single unified system. Users can interact with an AI legal assistant in both Bengali and English, generate court-ready legal documents from structured templates, analyze uploaded documents for risks and missing clauses, and access a searchable database of over 500 legal texts. The platform also includes real-time lawyer chat, digital e-signatures with verification, and an activity tracking system to ensure transparency and usability.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the frontend (Vite) dev server.
-npm run dev
-```
-
-## Running the backend (API)
-
-The backend lives in `server/` and runs on `http://localhost:5000` by default.
-
-```sh
-cd server
-npm i
-npm run dev
-```
-
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Built with a React + Vite frontend and a Node.js/Express backend, the system leverages MongoDB for data storage and integrates multiple production-grade services including OpenAI GPT-4o for reasoning, Socket.IO for real-time communication, and Cloudinary for file management. The architecture emphasizes scalability and modularity, with features such as JWT authentication, OTP verification, and document parsing using pdf-parse and mammoth. Together, these components create an end-to-end legal tech solution combining AI, full-stack engineering, and domain-specific workflow design
